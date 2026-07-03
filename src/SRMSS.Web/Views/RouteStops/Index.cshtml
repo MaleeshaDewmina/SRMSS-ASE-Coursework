@@ -1,0 +1,70 @@
+@model IEnumerable<SRMSS.Web.Models.RouteStop>
+
+@{
+    ViewData["Title"] = "Route Stops";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Route Stops</h2>
+            <p class="text-muted mb-0">
+                Manage intermediary stops and stop order for each transport route.
+            </p>
+        </div>
+
+        <a asp-action="Create" class="btn btn-primary">
+            + Add Route Stop
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white">
+            <strong>Route Stop List</strong>
+        </div>
+
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Route</th>
+                        <th>Stop Order</th>
+                        <th>Stop Name</th>
+                        <th>Estimated Time From Start</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.TransportRoute?.RouteName</td>
+                                <td>
+                                    <span class="badge bg-primary">@item.StopOrder</span>
+                                </td>
+                                <td>@item.StopName</td>
+                                <td>@item.EstimatedMinutesFromStart mins</td>
+                                <td class="text-end">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Details</a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No route stops have been added yet.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,54 @@
+@model SRMSS.Web.Models.RouteStop
+
+@{
+    ViewData["Title"] = "Add Route Stop";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white">
+            <strong>Add Route Stop</strong>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Create">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="TransportRouteId" class="form-label"></label>
+                    <select asp-for="TransportRouteId" class="form-select" asp-items="ViewBag.TransportRouteId">
+                        <option value="">-- Select Route --</option>
+                    </select>
+                    <span asp-validation-for="TransportRouteId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="StopName" class="form-label"></label>
+                    <input asp-for="StopName" class="form-control" placeholder="Example: Kalutara" />
+                    <span asp-validation-for="StopName" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="StopOrder" class="form-label"></label>
+                    <input asp-for="StopOrder" class="form-control" placeholder="Example: 1" />
+                    <span asp-validation-for="StopOrder" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="EstimatedMinutesFromStart" class="form-label"></label>
+                    <input asp-for="EstimatedMinutesFromStart" class="form-control" placeholder="Example: 45" />
+                    <span asp-validation-for="EstimatedMinutesFromStart" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save Route Stop</button>
+                    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
