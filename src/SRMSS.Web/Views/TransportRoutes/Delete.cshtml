@@ -1,63 +1,113 @@
 @model SRMSS.Web.Models.TransportRoute
 
 @{
-    ViewData["Title"] = "Delete";
+    ViewData["Title"] = "Delete Route";
+    ViewData["PageTitle"] = "Delete Route";
+    ViewData["PageSubtitle"] = "Confirm before removing this transport route from the system.";
 }
 
-<h1>Delete</h1>
+<div class="route-editor-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Delete Confirmation</h3>
+        <p class="card-subtitle">
+            Review the route details carefully before deleting.
+        </p>
 
-<h3>Are you sure you want to delete this?</h3>
-<div>
-    <h4>TransportRoute</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.RouteName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.RouteName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StartPoint)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StartPoint)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EndPoint)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EndPoint)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DistanceKm)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DistanceKm)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EstimatedDurationMinutes)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EstimatedDurationMinutes)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ServiceType)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ServiceType)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-    </dl>
-    
-    <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-action="Index">Back to List</a>
-    </form>
+        <div class="validation-panel">
+            <h3>Warning</h3>
+            <p>
+                This action will remove the selected route. If this route has related stops or schedules, deleting it may affect route planning and schedule records.
+            </p>
+        </div>
+
+        <div class="details-list">
+            <div class="details-row">
+                <span>Route Name</span>
+                <strong>@Model.RouteName</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Start Point</span>
+                <strong>@Model.StartPoint</strong>
+            </div>
+
+            <div class="details-row">
+                <span>End Point</span>
+                <strong>@Model.EndPoint</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Distance</span>
+                <strong>@Model.DistanceKm km</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Estimated Duration</span>
+                <strong>@Model.EstimatedDurationMinutes mins</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Service Type</span>
+                <strong>@Model.ServiceType</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Status</span>
+                <strong>@Model.Status</strong>
+            </div>
+        </div>
+
+        <form asp-action="Delete" class="mt-4">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="d-flex gap-3 flex-wrap">
+                <button type="submit" class="srmss-btn danger">
+                    Delete Route
+                </button>
+
+                <a asp-action="Index" class="srmss-btn secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="srmss-card amber">
+        <h3 class="card-title">Delete Impact</h3>
+        <p class="card-subtitle">
+            Check the route flow before confirming deletion.
+        </p>
+
+        <div class="stop-flow">
+            @if (Model.RouteStops != null && Model.RouteStops.Any())
+            {
+                foreach (var stop in Model.RouteStops.OrderBy(s => s.StopOrder))
+                {
+                    <div class="stop-flow-item">
+                        <div class="stop-dot @(stop.StopOrder == 1 ? "filled" : "")"></div>
+                        <div>
+                            <strong>@stop.StopOrder. @stop.StopName</strong>
+                            <small>This stop belongs to this route</small>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-stop-panel">
+                    <div class="empty-stop-icon">!</div>
+                    <h4>No stops found</h4>
+                    <p>This route has no recorded route stops.</p>
+                </div>
+            }
+        </div>
+
+        <div class="empty-stop-panel mt-4">
+            <div class="empty-stop-icon">!</div>
+            <h4>Before Deleting</h4>
+            <p>
+                Make sure this route is not needed for schedule management or report evidence.
+            </p>
+        </div>
+    </div>
 </div>

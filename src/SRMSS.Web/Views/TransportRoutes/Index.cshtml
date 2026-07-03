@@ -1,145 +1,449 @@
+@using System.Text.Json
 @model IEnumerable<SRMSS.Web.Models.TransportRoute>
 
 @{
     ViewData["Title"] = "Route Management";
     ViewData["PageTitle"] = "Route Management";
-    ViewData["PageSubtitle"] = "Manage transport routes, stops, distance and service types.";
+    ViewData["PageSubtitle"] = "Manage transport routes, route status, service type and stop flow.";
 
-    var routeCount = Model.Count();
+    var totalRoutes = Model.Count();
     var activeRoutes = Model.Count(r => r.Status == "Active");
-    var longDistanceRoutes = Model.Count(r => r.DistanceKm >= 80);
-    var urbanRoutes = Model.Count(r => r.DistanceKm < 80);
+    var inactiveRoutes = Model.Count(r => r.Status == "Inactive");
+    var expressRoutes = Model.Count(r => r.ServiceType == "Express");
+
+    var routeData = Model
+        .Select(r => new
+        {
+            routeId = r.Id,
+            routeName = r.RouteName,
+            startPoint = r.StartPoint,
+            endPoint = r.EndPoint,
+            distanceKm = r.DistanceKm,
+            estimatedDurationMinutes = r.EstimatedDurationMinutes,
+            serviceType = r.ServiceType,
+            status = r.Status,
+            stops = r.RouteStops
+                .OrderBy(s => s.StopOrder)
+                .Select(s => new
+                {
+                    stopOrder = s.StopOrder,
+                    stopName = s.StopName,
+                    estimatedMinutes = s.EstimatedMinutesFromStart
+                })
+                .ToList()
+        })
+        .ToList();
+
+    var routeDataJson = JsonSerializer.Serialize(
+        routeData,
+        new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }
+    );
 }
 
 <div class="d-flex justify-content-end mb-4">
     <a asp-action="Create" class="srmss-btn primary">
-        + Add Route
+        + Add New Route
     </a>
 </div>
 
-<div class="row g-4 mb-4">
-    <div class="col-lg-8">
-        <div class="srmss-card">
-            <h3 class="card-title">Route Map Preview</h3>
-            <p class="card-subtitle">
-                Visual location preview area for Google Maps or OpenStreetMap integration.
-            </p>
-
-            <div class="route-map-preview">
-                <div class="map-grid"></div>
-
-                <svg class="route-line" viewBox="0 0 700 160" preserveAspectRatio="none">
-                    <polyline points="50,105 180,60 350,90 540,40 650,20"
-                              fill="none"
-                              stroke="#1E3A8A"
-                              stroke-width="7"
-                              stroke-linecap="round"
-                              stroke-linejoin="round" />
-
-                    <circle cx="50" cy="105" r="8" fill="#F59E0B" />
-                    <circle cx="180" cy="60" r="8" fill="#F59E0B" />
-                    <circle cx="350" cy="90" r="8" fill="#F59E0B" />
-                    <circle cx="540" cy="40" r="8" fill="#F59E0B" />
-                    <circle cx="650" cy="20" r="8" fill="#F59E0B" />
-                </svg>
-            </div>
+<div class="metric-grid">
+    <div class="metric-card">
+        <div class="metric-icon">R</div>
+        <div>
+            <p>Total Routes</p>
+            <h3>@totalRoutes</h3>
         </div>
     </div>
 
-    <div class="col-lg-4">
-        <div class="srmss-card green h-100">
-            <h3 class="card-title">Route Summary</h3>
-            <p class="card-subtitle">Current route performance</p>
+    <div class="metric-card">
+        <div class="metric-icon green">A</div>
+        <div>
+            <p>Active Routes</p>
+            <h3>@activeRoutes</h3>
+        </div>
+    </div>
 
-            <div class="summary-row">
-                <span>Active routes</span>
-                <strong>@activeRoutes</strong>
-            </div>
+    <div class="metric-card">
+        <div class="metric-icon red">I</div>
+        <div>
+            <p>Inactive Routes</p>
+            <h3>@inactiveRoutes</h3>
+        </div>
+    </div>
 
-            <div class="summary-row">
-                <span>Long-distance</span>
-                <strong>@longDistanceRoutes</strong>
-            </div>
-
-            <div class="summary-row">
-                <span>Urban routes</span>
-                <strong>@urbanRoutes</strong>
-            </div>
-
-            <div class="summary-row">
-                <span>Total routes</span>
-                <strong>@routeCount</strong>
-            </div>
+    <div class="metric-card">
+        <div class="metric-icon amber">E</div>
+        <div>
+            <p>Express Routes</p>
+            <h3>@expressRoutes</h3>
         </div>
     </div>
 </div>
 
-<div class="srmss-card">
-    <h3 class="card-title">Route List</h3>
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Search and Filter Routes</h3>
     <p class="card-subtitle">
-        Routes are maintained by the route and schedule owner.
+        Search routes by name, start point or end point. Filter by service type and route status.
     </p>
 
-    <div class="mb-4">
-        <input class="top-search" style="width: 300px;" placeholder="Search route..." />
-    </div>
+    <div class="transport-route-filter-grid">
+        <div>
+            <label class="form-label">Search Route</label>
+            <input id="routeSearchInput"
+                   class="form-control"
+                   placeholder="Example: Colombo, Galle, Badulla, Kalutara..." />
+        </div>
 
-    <div class="table-responsive">
-        <table class="srmss-table">
-            <thead>
-                <tr>
-                    <th>Route</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Distance</th>
-                    <th>Duration</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Stops</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
+        <div>
+            <label class="form-label">Service Type</label>
+            <select id="serviceTypeFilter" class="form-select">
+                <option value="">All Types</option>
+                <option value="normal">Normal</option>
+                <option value="express">Express</option>
+                <option value="intercity">Intercity</option>
+            </select>
+        </div>
 
-            <tbody>
-                @if (Model.Any())
-                {
-                    foreach (var item in Model)
-                    {
-                        <tr>
-                            <td class="fw-bold">@item.RouteName</td>
-                            <td>@item.StartPoint</td>
-                            <td>@item.EndPoint</td>
-                            <td>@item.DistanceKm km</td>
-                            <td>@item.EstimatedDurationMinutes mins</td>
-                            <td>@item.ServiceType</td>
-                            <td>
-                                @if (item.Status == "Active")
-                                {
-                                    <span class="status-pill green">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="status-pill red">@item.Status</span>
-                                }
-                            </td>
-                            <td>@(item.RouteStops?.Count ?? 0)</td>
-                            <td class="text-end">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="action-link">Edit</a>
-                                <a asp-action="Details" asp-route-id="@item.Id" class="action-link">Details</a>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="action-link danger">Delete</a>
-                            </td>
-                        </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
-                            No routes have been added yet.
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <div>
+            <label class="form-label">Status</label>
+            <select id="statusFilter" class="form-select">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+
+        <div class="filter-button-area">
+            <button type="button" id="clearFilterBtn" class="srmss-btn secondary w-100">
+                Clear Filter
+            </button>
+        </div>
     </div>
 </div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="srmss-card">
+            <h3 class="card-title">Route List</h3>
+            <p class="card-subtitle">
+                Select a route to preview the stop flow diagram or open the route in Google Maps.
+            </p>
+
+            <div class="table-responsive">
+                <table class="srmss-table">
+                    <thead>
+                        <tr>
+                            <th>Route</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Distance</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="routeTableBody">
+                        @if (Model.Any())
+                        {
+                            foreach (var route in Model)
+                            {
+                                var stopNames = route.RouteStops != null
+                                    ? string.Join(" ", route.RouteStops.Select(s => s.StopName))
+                                    : "";
+
+                                var searchText = $"{route.RouteName} {route.StartPoint} {route.EndPoint} {route.ServiceType} {route.Status} {stopNames}".ToLower();
+
+                                var mapUrl = "https://www.google.com/maps/dir/?api=1"
+                                    + "&origin=" + System.Uri.EscapeDataString(route.StartPoint ?? "")
+                                    + "&destination=" + System.Uri.EscapeDataString(route.EndPoint ?? "")
+                                    + "&travelmode=driving";
+
+                                <tr class="transport-route-row"
+                                    data-route-id="@route.Id"
+                                    data-search="@searchText"
+                                    data-service-type="@route.ServiceType.ToLower()"
+                                    data-status="@route.Status.ToLower()">
+                                    <td class="fw-bold">@route.RouteName</td>
+                                    <td>@route.StartPoint</td>
+                                    <td>@route.EndPoint</td>
+                                    <td>@route.DistanceKm km</td>
+                                    <td>
+                                        @if (route.ServiceType == "Express")
+                                        {
+                                            <span class="status-pill amber">Express</span>
+                                        }
+                                        else if (route.ServiceType == "Intercity")
+                                        {
+                                            <span class="status-pill blue">Intercity</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill blue">Normal</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (route.Status == "Active")
+                                        {
+                                            <span class="status-pill green">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill red">Inactive</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="view-route-btn"
+                                                data-route-id="@route.Id">
+                                            View Route
+                                        </button>
+
+                                        <a href="@mapUrl"
+                                           target="_blank"
+                                           class="map-route-link">
+                                            Map
+                                        </a>
+
+                                        <a asp-action="Details" asp-route-id="@route.Id" class="action-link">Details</a>
+                                        <a asp-action="Edit" asp-route-id="@route.Id" class="action-link">Edit</a>
+                                        <a asp-action="Delete" asp-route-id="@route.Id" class="action-link danger">Delete</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    No routes have been added yet.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="noRouteResults" class="no-stop-results d-none">
+                No matching routes found.
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="srmss-card amber h-100" id="routePreviewPanel">
+            <h3 class="card-title">Route Preview</h3>
+            <p class="card-subtitle" id="routePreviewSubtitle">
+                Select a route to view the simple route line.
+            </p>
+
+            <div id="routeDiagramArea" class="route-diagram-wrapper">
+                <div class="empty-route-diagram">
+                    Select a route from the table.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const routes = @Html.Raw(routeDataJson);
+
+            const searchInput = document.getElementById("routeSearchInput");
+            const serviceTypeFilter = document.getElementById("serviceTypeFilter");
+            const statusFilter = document.getElementById("statusFilter");
+            const clearFilterBtn = document.getElementById("clearFilterBtn");
+            const rows = document.querySelectorAll(".transport-route-row");
+            const noRouteResults = document.getElementById("noRouteResults");
+
+            const routePreviewSubtitle = document.getElementById("routePreviewSubtitle");
+            const routeDiagramArea = document.getElementById("routeDiagramArea");
+            const routePreviewPanel = document.getElementById("routePreviewPanel");
+
+            function escapeHtml(value) {
+                if (value === null || value === undefined) {
+                    return "";
+                }
+
+                return String(value)
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll('"', "&quot;")
+                    .replaceAll("'", "&#039;");
+            }
+
+            function buildGoogleMapsUrl(startPoint, endPoint) {
+                const origin = encodeURIComponent(startPoint);
+                const destination = encodeURIComponent(endPoint);
+
+                return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+            }
+
+            function filterRoutes() {
+                const searchValue = searchInput.value.toLowerCase().trim();
+                const selectedServiceType = serviceTypeFilter.value;
+                const selectedStatus = statusFilter.value;
+
+                let visibleCount = 0;
+
+                rows.forEach(function (row) {
+                    const rowSearch = row.getAttribute("data-search");
+                    const rowServiceType = row.getAttribute("data-service-type");
+                    const rowStatus = row.getAttribute("data-status");
+
+                    const matchesSearch = rowSearch.includes(searchValue);
+                    const matchesServiceType = selectedServiceType === "" || rowServiceType === selectedServiceType;
+                    const matchesStatus = selectedStatus === "" || rowStatus === selectedStatus;
+
+                    if (matchesSearch && matchesServiceType && matchesStatus) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                if (visibleCount === 0 && rows.length > 0) {
+                    noRouteResults.classList.remove("d-none");
+                } else {
+                    noRouteResults.classList.add("d-none");
+                }
+            }
+
+            function showRouteDiagram(routeId, shouldScroll) {
+                const route = routes.find(r => r.routeId === routeId);
+
+                if (!route) {
+                    routePreviewSubtitle.textContent = "Route details not found.";
+                    routeDiagramArea.innerHTML = `
+                        <div class="empty-route-diagram">
+                            Route details not found.
+                        </div>
+                    `;
+                    return;
+                }
+
+                const mapUrl = buildGoogleMapsUrl(route.startPoint, route.endPoint);
+
+                routePreviewSubtitle.textContent =
+                    `${route.routeName} | ${route.startPoint} → ${route.endPoint}`;
+
+                let points = [];
+
+                points.push({
+                    label: route.startPoint,
+                    type: "Start",
+                    className: "start"
+                });
+
+                route.stops.forEach(function (stop) {
+                    points.push({
+                        label: stop.stopName,
+                        type: `${stop.estimatedMinutes} mins`,
+                        className: "middle"
+                    });
+                });
+
+                points.push({
+                    label: route.endPoint,
+                    type: "End",
+                    className: "end"
+                });
+
+                let html = `
+                    <div class="route-diagram-header">
+                        <div>
+                            <strong>${escapeHtml(route.routeName)}</strong>
+                            <p>${escapeHtml(route.distanceKm)} km | ${escapeHtml(route.estimatedDurationMinutes)} mins</p>
+                        </div>
+                        <span class="status-pill blue">${escapeHtml(route.serviceType)}</span>
+                    </div>
+
+                    <div class="route-map-action-box">
+                        <div>
+                            <strong>Online Map Integration</strong>
+                            <p>Open this route in Google Maps for road-level direction preview.</p>
+                        </div>
+
+                        <a href="${mapUrl}" target="_blank" class="srmss-btn light">
+                            Open Google Maps
+                        </a>
+                    </div>
+
+                    <div class="route-diagram">
+                        <div class="route-line-track">
+                `;
+
+                points.forEach(function (point, index) {
+                    html += `
+                        <div class="route-point ${point.className}">
+                            <div class="route-dot">${index + 1}</div>
+                            <div class="route-label">
+                                <strong>${escapeHtml(point.label)}</strong>
+                                <span>${escapeHtml(point.type)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+
+                routeDiagramArea.innerHTML = html;
+
+                document.querySelectorAll(".view-route-btn").forEach(btn => {
+                    btn.classList.remove("active");
+                });
+
+                document.querySelectorAll(`.view-route-btn[data-route-id="${routeId}"]`).forEach(btn => {
+                    btn.classList.add("active");
+                });
+
+                document.querySelectorAll(".transport-route-row").forEach(row => {
+                    row.classList.remove("active");
+                });
+
+                document.querySelectorAll(`.transport-route-row[data-route-id="${routeId}"]`).forEach(row => {
+                    row.classList.add("active");
+                });
+
+                if (shouldScroll) {
+                    routePreviewPanel.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+                }
+            }
+
+            searchInput.addEventListener("input", filterRoutes);
+            serviceTypeFilter.addEventListener("change", filterRoutes);
+            statusFilter.addEventListener("change", filterRoutes);
+
+            clearFilterBtn.addEventListener("click", function () {
+                searchInput.value = "";
+                serviceTypeFilter.value = "";
+                statusFilter.value = "";
+                filterRoutes();
+            });
+
+            document.querySelectorAll(".view-route-btn").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    const routeId = parseInt(this.getAttribute("data-route-id"));
+                    showRouteDiagram(routeId, true);
+                });
+            });
+
+            if (routes.length > 0) {
+                showRouteDiagram(routes[0].routeId, false);
+            }
+        });
+    </script>
+}

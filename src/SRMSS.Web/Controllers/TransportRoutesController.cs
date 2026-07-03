@@ -20,7 +20,7 @@ namespace SRMSS.Web.Controllers
         }
 
         // GET: TransportRoutes
-        public async Task<IActionResult> Index()
+public async Task<IActionResult> Index()
 {
     var routes = await _context.TransportRoutes
         .Include(r => r.RouteStops)
@@ -29,24 +29,25 @@ namespace SRMSS.Web.Controllers
 
     return View(routes);
 }
-
         // GET: TransportRoutes/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+public async Task<IActionResult> Details(int? id)
+{
+    if (id == null)
+    {
+        return NotFound();
+    }
 
-            var transportRoute = await _context.TransportRoutes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (transportRoute == null)
-            {
-                return NotFound();
-            }
+    var transportRoute = await _context.TransportRoutes
+        .Include(r => r.RouteStops)
+        .FirstOrDefaultAsync(m => m.Id == id);
 
-            return View(transportRoute);
-        }
+    if (transportRoute == null)
+    {
+        return NotFound();
+    }
+
+    return View(transportRoute);
+}
 
         // GET: TransportRoutes/Create
         public IActionResult Create()
@@ -127,22 +128,24 @@ public async Task<IActionResult> Edit(int? id)
         }
 
         // GET: TransportRoutes/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+public async Task<IActionResult> Delete(int? id)
+{
+    if (id == null)
+    {
+        return NotFound();
+    }
 
-            var transportRoute = await _context.TransportRoutes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (transportRoute == null)
-            {
-                return NotFound();
-            }
+    var transportRoute = await _context.TransportRoutes
+        .Include(r => r.RouteStops)
+        .FirstOrDefaultAsync(m => m.Id == id);
 
-            return View(transportRoute);
-        }
+    if (transportRoute == null)
+    {
+        return NotFound();
+    }
+
+    return View(transportRoute);
+}
 
         // POST: TransportRoutes/Delete/5
         [HttpPost, ActionName("Delete")]

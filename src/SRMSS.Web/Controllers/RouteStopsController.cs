@@ -18,12 +18,13 @@ namespace SRMSS.Web.Controllers
         // GET: RouteStops
         public async Task<IActionResult> Index()
         {
-            var routeStops = _context.RouteStops
-                .Include(r => r.TransportRoute)
-                .OrderBy(r => r.TransportRoute!.RouteName)
-                .ThenBy(r => r.StopOrder);
+            var routes = await _context.TransportRoutes
+                .Include(r => r.RouteStops)
+                .OrderByDescending(r => r.RouteStops.Any() ? r.RouteStops.Max(s => s.Id) : 0)
+                .ThenBy(r => r.RouteName)
+                .ToListAsync();
 
-            return View(await routeStops.ToListAsync());
+            return View(routes);
         }
 
         // GET: RouteStops/Details/5
@@ -56,7 +57,8 @@ namespace SRMSS.Web.Controllers
         // POST: RouteStops/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,TransportRouteId,StopName,StopOrder,EstimatedMinutesFromStart")] RouteStop routeStop)
+        public async Task<IActionResult> Create(
+            [Bind("Id,TransportRouteId,StopName,StopOrder,EstimatedMinutesFromStart")] RouteStop routeStop)
         {
             bool duplicateStopOrder = await _context.RouteStops.AnyAsync(rs =>
                 rs.TransportRouteId == routeStop.TransportRouteId &&
@@ -70,8 +72,9 @@ namespace SRMSS.Web.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Add(routeStop);
+                _context.RouteStops.Add(routeStop);
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -87,7 +90,9 @@ namespace SRMSS.Web.Controllers
                 return NotFound();
             }
 
-            var routeStop = await _context.RouteStops.FindAsync(id);
+            var routeStop = await _context.RouteStops
+                .Include(r => r.TransportRoute)
+                .FirstOrDefaultAsync(r => r.Id == id);
 
             if (routeStop == null)
             {
@@ -101,7 +106,9 @@ namespace SRMSS.Web.Controllers
         // POST: RouteStops/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,TransportRouteId,StopName,StopOrder,EstimatedMinutesFromStart")] RouteStop routeStop)
+        public async Task<IActionResult> Edit(
+            int id,
+            [Bind("Id,TransportRouteId,StopName,StopOrder,EstimatedMinutesFromStart")] RouteStop routeStop)
         {
             if (id != routeStop.Id)
             {
@@ -123,7 +130,7 @@ namespace SRMSS.Web.Controllers
             {
                 try
                 {
-                    _context.Update(routeStop);
+                    _context.RouteStops.Update(routeStop);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
