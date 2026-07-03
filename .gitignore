@@ -1,0 +1,34 @@
+# Build results
+bin/
+obj/
+.vs/
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache
+*.VC.db
+*.VC.VC.opendb
+
+# Rider
+.idea/
+
+# ASP.NET
+wwwroot/uploads/
+appsettings.Development.json
+
+# Logs
+*.log
+logs/
+
+# Database local files
+*.mdf
+*.ldf
+
+# OS files
+.DS_Store
+Thumbs.db
