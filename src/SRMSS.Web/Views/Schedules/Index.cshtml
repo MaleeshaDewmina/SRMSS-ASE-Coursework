@@ -2,39 +2,104 @@
 
 @{
     ViewData["Title"] = "Schedule Management";
+    ViewData["PageTitle"] = "Schedule Management";
+    ViewData["PageSubtitle"] = "Create timetables, assign vehicles and detect conflicts.";
+
+    var totalSchedules = Model.Count();
+    var delayedTrips = Model.Count(s => s.Status == "Delayed");
+    var completedTrips = Model.Count(s => s.Status == "Completed");
+    var activeTrips = Model.Count(s => s.Status == "Scheduled" || s.Status == "On Time");
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">Schedule Management</h2>
-            <p class="text-muted mb-0">
-                Manage route schedules, assigned drivers, assigned vehicles, and trip status.
-            </p>
-        </div>
+<div class="d-flex justify-content-end mb-4">
+    <a asp-action="Create" class="srmss-btn primary">
+        + Create Schedule
+    </a>
+</div>
 
-        <a asp-action="Create" class="btn btn-primary">
-            + Add Schedule
-        </a>
+<div class="metric-grid">
+    <div class="metric-card">
+        <div class="metric-icon">S</div>
+        <div>
+            <p>Total Schedules</p>
+            <h3>@totalSchedules</h3>
+        </div>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-dark text-white">
-            <strong>Depot Schedule List</strong>
+    <div class="metric-card">
+        <div class="metric-icon green">A</div>
+        <div>
+            <p>Active Trips</p>
+            <h3>@activeTrips</h3>
         </div>
+    </div>
 
-        <div class="card-body p-0">
-            <table class="table table-hover table-striped mb-0 align-middle">
-                <thead class="table-light">
+    <div class="metric-card">
+        <div class="metric-icon amber">!</div>
+        <div>
+            <p>Delayed Trips</p>
+            <h3>@delayedTrips</h3>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon">C</div>
+        <div>
+            <p>Completed</p>
+            <h3>@completedTrips</h3>
+        </div>
+    </div>
+</div>
+
+<div class="schedule-dashboard-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Today Timeline</h3>
+        <p class="card-subtitle">Daily operational view</p>
+
+        <div class="timeline-board">
+            @if (Model.Any())
+            {
+                foreach (var item in Model.OrderBy(s => s.DepartureTime).Take(5))
+                {
+                    var blockClass = item.Status switch
+                    {
+                        "Delayed" => "timeline-block amber",
+                        "Completed" => "timeline-block green",
+                        "Cancelled" => "timeline-block red",
+                        _ => "timeline-block blue"
+                    };
+
+                    <div class="timeline-row">
+                        <div class="timeline-time">@item.DepartureTime.ToString(@"hh\:mm")</div>
+                        <div class="@blockClass">
+                            <strong>@item.TransportRoute?.RouteName</strong>
+                            <small>@item.Vehicle?.RegistrationNumber + @item.Driver?.FullName</small>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted">No schedules available for the timeline.</p>
+            }
+        </div>
+    </div>
+
+    <div class="srmss-card">
+        <h3 class="card-title">Schedule List</h3>
+        <p class="card-subtitle">Prevent overlapping bus and driver assignments</p>
+
+        <div class="table-responsive">
+            <table class="srmss-table">
+                <thead>
                     <tr>
                         <th>Date</th>
                         <th>Route</th>
-                        <th>Vehicle</th>
+                        <th>Bus</th>
                         <th>Driver</th>
-                        <th>Departure</th>
-                        <th>Arrival</th>
+                        <th>Time</th>
                         <th>Status</th>
-                        <th>Update Status</th>
+                        <th>Update</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -45,40 +110,39 @@
                         foreach (var item in Model)
                         {
                             <tr>
-                                <td>@item.ScheduleDate.ToString("yyyy-MM-dd")</td>
-                                <td class="fw-semibold">@item.TransportRoute?.RouteName</td>
+                                <td>@item.ScheduleDate.ToString("dd MMM")</td>
+                                <td class="fw-bold">@item.TransportRoute?.RouteName</td>
                                 <td>@item.Vehicle?.RegistrationNumber</td>
                                 <td>@item.Driver?.FullName</td>
-                                <td>@item.DepartureTime.ToString(@"hh\:mm")</td>
-                                <td>@item.ArrivalTime.ToString(@"hh\:mm")</td>
+                                <td>@item.DepartureTime.ToString(@"hh\:mm") - @item.ArrivalTime.ToString(@"hh\:mm")</td>
                                 <td>
                                     @if (item.Status == "Scheduled")
                                     {
-                                        <span class="badge bg-primary">Scheduled</span>
+                                        <span class="status-pill blue">Scheduled</span>
                                     }
                                     else if (item.Status == "On Time")
                                     {
-                                        <span class="badge bg-success">On Time</span>
+                                        <span class="status-pill green">On Time</span>
                                     }
                                     else if (item.Status == "Delayed")
                                     {
-                                        <span class="badge bg-warning text-dark">Delayed</span>
+                                        <span class="status-pill amber">Delayed</span>
                                     }
                                     else if (item.Status == "Completed")
                                     {
-                                        <span class="badge bg-dark">Completed</span>
+                                        <span class="status-pill green">Completed</span>
                                     }
                                     else if (item.Status == "Cancelled")
                                     {
-                                        <span class="badge bg-danger">Cancelled</span>
+                                        <span class="status-pill red">Cancelled</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-secondary">@item.Status</span>
+                                        <span class="status-pill blue">@item.Status</span>
                                     }
                                 </td>
                                 <td>
-                                    <form asp-action="UpdateStatus" method="post" class="d-flex gap-1">
+                                    <form asp-action="UpdateStatus" method="post" class="status-update-form">
                                         <input type="hidden" name="id" value="@item.Id" />
                                         <select name="status" class="form-select form-select-sm">
                                             <option value="Scheduled">Scheduled</option>
@@ -87,13 +151,13 @@
                                             <option value="Completed">Completed</option>
                                             <option value="Cancelled">Cancelled</option>
                                         </select>
-                                        <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                        <button type="submit" class="mini-save-btn">Save</button>
                                     </form>
                                 </td>
                                 <td class="text-end">
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Details</a>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="action-link">Edit</a>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="action-link">Details</a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="action-link danger">Delete</a>
                                 </td>
                             </tr>
                         }
@@ -101,13 +165,20 @@
                     else
                     {
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 No schedules have been created yet.
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
+        </div>
+
+        <div class="smart-note mt-4">
+            <h4>Smart conflict detection</h4>
+            <p>
+                System checks whether the selected bus or driver is already assigned in the same time range before saving.
+            </p>
         </div>
     </div>
 </div>

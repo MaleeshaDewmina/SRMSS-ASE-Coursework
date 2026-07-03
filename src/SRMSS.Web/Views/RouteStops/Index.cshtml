@@ -2,69 +2,132 @@
 
 @{
     ViewData["Title"] = "Route Stops";
+    ViewData["PageTitle"] = "Route Stops";
+    ViewData["PageSubtitle"] = "Manage ordered intermediary stops for each transport route.";
+
+    var totalStops = Model.Count();
+    var routesWithStops = Model.Select(s => s.TransportRouteId).Distinct().Count();
+    var firstRoute = Model.FirstOrDefault()?.TransportRoute?.RouteName ?? "No route selected";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">Route Stops</h2>
-            <p class="text-muted mb-0">
-                Manage intermediary stops and stop order for each transport route.
-            </p>
-        </div>
+<div class="d-flex justify-content-end mb-4">
+    <a asp-action="Create" class="srmss-btn primary">
+        + Add Route Stop
+    </a>
+</div>
 
-        <a asp-action="Create" class="btn btn-primary">
-            + Add Route Stop
-        </a>
+<div class="metric-grid">
+    <div class="metric-card">
+        <div class="metric-icon">St</div>
+        <div>
+            <p>Total Stops</p>
+            <h3>@totalStops</h3>
+        </div>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-dark text-white">
-            <strong>Route Stop List</strong>
+    <div class="metric-card">
+        <div class="metric-icon green">R</div>
+        <div>
+            <p>Routes With Stops</p>
+            <h3>@routesWithStops</h3>
         </div>
+    </div>
 
-        <div class="card-body p-0">
-            <table class="table table-hover table-striped mb-0 align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Route</th>
-                        <th>Stop Order</th>
-                        <th>Stop Name</th>
-                        <th>Estimated Time From Start</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
+    <div class="metric-card">
+        <div class="metric-icon amber">O</div>
+        <div>
+            <p>Ordering Enabled</p>
+            <h3>Yes</h3>
+        </div>
+    </div>
 
-                <tbody>
-                    @if (Model.Any())
-                    {
-                        foreach (var item in Model)
+    <div class="metric-card">
+        <div class="metric-icon">T</div>
+        <div>
+            <p>Timing Support</p>
+            <h3>Yes</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="srmss-card">
+            <h3 class="card-title">Route Stop List</h3>
+            <p class="card-subtitle">
+                Ordered stops are used by schedule managers to understand route flow.
+            </p>
+
+            <div class="table-responsive">
+                <table class="srmss-table">
+                    <thead>
+                        <tr>
+                            <th>Route</th>
+                            <th>Order</th>
+                            <th>Stop Name</th>
+                            <th>Estimated Time</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@item.TransportRoute?.RouteName</td>
+                                    <td>
+                                        <span class="status-pill blue">@item.StopOrder</span>
+                                    </td>
+                                    <td>@item.StopName</td>
+                                    <td>@item.EstimatedMinutesFromStart mins</td>
+                                    <td class="text-end">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="action-link">Edit</a>
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="action-link">Details</a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="action-link danger">Delete</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
                         {
                             <tr>
-                                <td class="fw-semibold">@item.TransportRoute?.RouteName</td>
-                                <td>
-                                    <span class="badge bg-primary">@item.StopOrder</span>
-                                </td>
-                                <td>@item.StopName</td>
-                                <td>@item.EstimatedMinutesFromStart mins</td>
-                                <td class="text-end">
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Details</a>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No route stops have been added yet.
                                 </td>
                             </tr>
                         }
-                    }
-                    else
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="srmss-card amber h-100">
+            <h3 class="card-title">Stop Flow Preview</h3>
+            <p class="card-subtitle">@firstRoute</p>
+
+            <div class="stop-flow">
+                @if (Model.Any())
+                {
+                    foreach (var item in Model.OrderBy(s => s.StopOrder).Take(6))
                     {
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No route stops have been added yet.
-                            </td>
-                        </tr>
+                        <div class="stop-flow-item">
+                            <div class="stop-dot @(item.StopOrder == 1 ? "filled" : "")"></div>
+                            <div>
+                                <strong>@item.StopOrder. @item.StopName</strong>
+                                <small>@item.EstimatedMinutesFromStart mins from start</small>
+                            </div>
+                        </div>
                     }
-                </tbody>
-            </table>
+                }
+                else
+                {
+                    <p class="text-muted">Add stops to preview the route flow.</p>
+                }
+            </div>
         </div>
     </div>
 </div>

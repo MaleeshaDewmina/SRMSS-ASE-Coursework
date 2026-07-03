@@ -21,9 +21,14 @@ namespace SRMSS.Web.Controllers
 
         // GET: TransportRoutes
         public async Task<IActionResult> Index()
-        {
-            return View(await _context.TransportRoutes.ToListAsync());
-        }
+{
+    var routes = await _context.TransportRoutes
+        .Include(r => r.RouteStops)
+        .OrderBy(r => r.RouteName)
+        .ToListAsync();
+
+    return View(routes);
+}
 
         // GET: TransportRoutes/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -66,20 +71,25 @@ namespace SRMSS.Web.Controllers
         }
 
         // GET: TransportRoutes/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+// GET: TransportRoutes/Edit/5
+public async Task<IActionResult> Edit(int? id)
+{
+    if (id == null)
+    {
+        return NotFound();
+    }
 
-            var transportRoute = await _context.TransportRoutes.FindAsync(id);
-            if (transportRoute == null)
-            {
-                return NotFound();
-            }
-            return View(transportRoute);
-        }
+    var transportRoute = await _context.TransportRoutes
+        .Include(r => r.RouteStops)
+        .FirstOrDefaultAsync(r => r.Id == id);
+
+    if (transportRoute == null)
+    {
+        return NotFound();
+    }
+
+    return View(transportRoute);
+}
 
         // POST: TransportRoutes/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
