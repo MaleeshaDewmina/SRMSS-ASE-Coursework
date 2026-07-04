@@ -97,6 +97,27 @@
     </div>
 </div>
 
+<div class="srmss-card route-preview-main-card mb-4" id="routePreviewPanel">
+    <div class="route-preview-topbar">
+        <div>
+            <h3 class="card-title mb-1">Online Map Route Preview</h3>
+            <p class="card-subtitle mb-0" id="routePreviewSubtitle">
+                Select a route to view online map preview.
+            </p>
+        </div>
+
+        <div class="route-preview-badge">
+            Live Route Mapping
+        </div>
+    </div>
+
+    <div id="routeDiagramArea" class="route-map-preview-wrapper">
+        <div class="empty-route-diagram">
+            Select a route from the table.
+        </div>
+    </div>
+</div>
+
 <div class="srmss-card mb-4">
     <h3 class="card-title">Search and Filter Routes</h3>
     <p class="card-subtitle">
@@ -138,134 +159,115 @@
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-7">
-        <div class="srmss-card">
-            <h3 class="card-title">Route List</h3>
-            <p class="card-subtitle">
-                Select a route to preview the path on an online map using intermediary stops.
-            </p>
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Route List</h3>
+    <p class="card-subtitle">
+        Select a route to preview the map, ordered stop flow and Google Maps direction link.
+    </p>
 
-            <div class="table-responsive">
-                <table class="srmss-table">
-                    <thead>
-                        <tr>
-                            <th>Route</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>Distance</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th class="text-end">Actions</th>
+    <div class="table-responsive">
+        <table class="srmss-table">
+            <thead>
+                <tr>
+                    <th>Route</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Distance</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody id="routeTableBody">
+                @if (Model.Any())
+                {
+                    foreach (var route in Model)
+                    {
+                        var orderedStops = route.RouteStops != null
+                            ? route.RouteStops.OrderBy(s => s.StopOrder).ToList()
+                            : new List<SRMSS.Web.Models.RouteStop>();
+
+                        var stopNames = string.Join(" ", orderedStops.Select(s => s.StopName));
+                        var searchText = $"{route.RouteName} {route.StartPoint} {route.EndPoint} {route.ServiceType} {route.Status} {stopNames}".ToLower();
+
+                        var origin = System.Uri.EscapeDataString(route.StartPoint ?? "");
+                        var destination = System.Uri.EscapeDataString(route.EndPoint ?? "");
+                        var waypoints = string.Join("%7C", orderedStops.Select(s => System.Uri.EscapeDataString(s.StopName ?? "")));
+
+                        var mapUrl = "https://www.google.com/maps/dir/?api=1"
+                            + "&origin=" + origin
+                            + "&destination=" + destination
+                            + (string.IsNullOrWhiteSpace(waypoints) ? "" : "&waypoints=" + waypoints)
+                            + "&travelmode=driving";
+
+                        <tr class="transport-route-row"
+                            data-route-id="@route.Id"
+                            data-search="@searchText"
+                            data-service-type="@route.ServiceType.ToLower()"
+                            data-status="@route.Status.ToLower()">
+                            <td class="fw-bold">@route.RouteName</td>
+                            <td>@route.StartPoint</td>
+                            <td>@route.EndPoint</td>
+                            <td>@route.DistanceKm km</td>
+                            <td>
+                                @if (route.ServiceType == "Express")
+                                {
+                                    <span class="status-pill amber">Express</span>
+                                }
+                                else if (route.ServiceType == "Intercity")
+                                {
+                                    <span class="status-pill blue">Intercity</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pill blue">Normal</span>
+                                }
+                            </td>
+                            <td>
+                                @if (route.Status == "Active")
+                                {
+                                    <span class="status-pill green">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pill red">Inactive</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <button type="button"
+                                        class="view-route-btn"
+                                        data-route-id="@route.Id">
+                                    View Map
+                                </button>
+
+                                <a href="@mapUrl"
+                                   target="_blank"
+                                   class="map-route-link">
+                                    Google
+                                </a>
+
+                                <a asp-action="Details" asp-route-id="@route.Id" class="action-link">Details</a>
+                                <a asp-action="Edit" asp-route-id="@route.Id" class="action-link">Edit</a>
+                                <a asp-action="Delete" asp-route-id="@route.Id" class="action-link danger">Delete</a>
+                            </td>
                         </tr>
-                    </thead>
-
-                    <tbody id="routeTableBody">
-                        @if (Model.Any())
-                        {
-                            foreach (var route in Model)
-                            {
-                                var orderedStops = route.RouteStops != null
-                                    ? route.RouteStops.OrderBy(s => s.StopOrder).ToList()
-                                    : new List<SRMSS.Web.Models.RouteStop>();
-
-                                var stopNames = string.Join(" ", orderedStops.Select(s => s.StopName));
-                                var searchText = $"{route.RouteName} {route.StartPoint} {route.EndPoint} {route.ServiceType} {route.Status} {stopNames}".ToLower();
-
-                                var origin = System.Uri.EscapeDataString(route.StartPoint ?? "");
-                                var destination = System.Uri.EscapeDataString(route.EndPoint ?? "");
-                                var waypoints = string.Join("%7C", orderedStops.Select(s => System.Uri.EscapeDataString(s.StopName ?? "")));
-
-                                var mapUrl = "https://www.google.com/maps/dir/?api=1"
-                                    + "&origin=" + origin
-                                    + "&destination=" + destination
-                                    + (string.IsNullOrWhiteSpace(waypoints) ? "" : "&waypoints=" + waypoints)
-                                    + "&travelmode=driving";
-
-                                <tr class="transport-route-row"
-                                    data-route-id="@route.Id"
-                                    data-search="@searchText"
-                                    data-service-type="@route.ServiceType.ToLower()"
-                                    data-status="@route.Status.ToLower()">
-                                    <td class="fw-bold">@route.RouteName</td>
-                                    <td>@route.StartPoint</td>
-                                    <td>@route.EndPoint</td>
-                                    <td>@route.DistanceKm km</td>
-                                    <td>
-                                        @if (route.ServiceType == "Express")
-                                        {
-                                            <span class="status-pill amber">Express</span>
-                                        }
-                                        else if (route.ServiceType == "Intercity")
-                                        {
-                                            <span class="status-pill blue">Intercity</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="status-pill blue">Normal</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (route.Status == "Active")
-                                        {
-                                            <span class="status-pill green">Active</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="status-pill red">Inactive</span>
-                                        }
-                                    </td>
-                                    <td class="text-end">
-                                        <button type="button"
-                                                class="view-route-btn"
-                                                data-route-id="@route.Id">
-                                            View Map
-                                        </button>
-
-                                        <a href="@mapUrl"
-                                           target="_blank"
-                                           class="map-route-link">
-                                            Google
-                                        </a>
-
-                                        <a asp-action="Details" asp-route-id="@route.Id" class="action-link">Details</a>
-                                        <a asp-action="Edit" asp-route-id="@route.Id" class="action-link">Edit</a>
-                                        <a asp-action="Delete" asp-route-id="@route.Id" class="action-link danger">Delete</a>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    No routes have been added yet.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="noRouteResults" class="no-stop-results d-none">
-                No matching routes found.
-            </div>
-        </div>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            No routes have been added yet.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 
-    <div class="col-lg-5">
-        <div class="srmss-card amber h-100" id="routePreviewPanel">
-            <h3 class="card-title">Online Map Route Preview</h3>
-            <p class="card-subtitle" id="routePreviewSubtitle">
-                Select a route to view online map preview.
-            </p>
-
-            <div id="routeDiagramArea" class="route-map-preview-wrapper">
-                <div class="empty-route-diagram">
-                    Select a route from the table.
-                </div>
-            </div>
-        </div>
+    <div id="noRouteResults" class="no-stop-results d-none">
+        No matching routes found.
     </div>
 </div>
 
@@ -550,8 +552,8 @@
                 if (missingArea && missingPoints.length > 0) {
                     missingArea.innerHTML = `
                         <div class="route-map-warning">
-                            Some locations could not be found by the online map service:
-                            <strong>${missingPoints.map(point => escapeHtml(point)).join(", ")}</strong>
+                            Map service could not locate ${missingPoints.length} saved route point(s).
+                            Use simple real town names for highest accuracy.
                         </div>
                     `;
                 } else if (missingArea) {
@@ -562,7 +564,7 @@
                     mapElement.innerHTML = `
                         <div class="map-error-message">
                             Map location could not be found for this route.
-                            Please use real searchable place names such as bus stand, railway station or town name.
+                            Please use real searchable place names such as Colombo, Badulla, Ratnapura or Ella.
                         </div>
                     `;
                     return;
@@ -674,9 +676,36 @@
                             <span class="status-pill blue">${escapeHtml(route.serviceType)}</span>
                         </div>
 
-                        <div class="route-map-frame">
-                            <div id="liveRouteMap" class="live-route-map">
-                                <div class="map-loading-message">Loading online route map...</div>
+                        <div class="route-preview-grid">
+                            <div class="route-map-frame">
+                                <div id="liveRouteMap" class="live-route-map">
+                                    <div class="map-loading-message">Loading online route map...</div>
+                                </div>
+                            </div>
+
+                            <div class="route-preview-side">
+                                <div class="route-map-info">
+                                    <div>
+                                        <span>Start Point</span>
+                                        <strong>${escapeHtml(route.startPoint)}</strong>
+                                    </div>
+
+                                    <div>
+                                        <span>End Point</span>
+                                        <strong>${escapeHtml(route.endPoint)}</strong>
+                                    </div>
+                                </div>
+
+                                <div class="route-map-stops">
+                                    <span class="route-map-stops-title">Stops Used as Waypoints</span>
+                                    <div>
+                                        ${stopHtml}
+                                    </div>
+                                </div>
+
+                                <a href="${mapUrl}" target="_blank" class="srmss-btn primary w-100">
+                                    Open Full Route in Google Maps
+                                </a>
                             </div>
                         </div>
 
@@ -689,29 +718,6 @@
                                 ${routeFlowHtml}
                             </div>
                         </div>
-
-                        <div class="route-map-info">
-                            <div>
-                                <span>Start Point</span>
-                                <strong>${escapeHtml(route.startPoint)}</strong>
-                            </div>
-
-                            <div>
-                                <span>End Point</span>
-                                <strong>${escapeHtml(route.endPoint)}</strong>
-                            </div>
-                        </div>
-
-                        <div class="route-map-stops">
-                            <span class="route-map-stops-title">Intermediary Stops Used as Map Waypoints</span>
-                            <div>
-                                ${stopHtml}
-                            </div>
-                        </div>
-
-                        <a href="${mapUrl}" target="_blank" class="srmss-btn primary w-100 mt-3">
-                            Open Full Route in Google Maps
-                        </a>
                     </div>
                 `;
 
