@@ -1,0 +1,300 @@
+@{
+    ViewData["Title"] = "Dashboard";
+
+    string role = ViewBag.Role ?? "";
+    string fullName = ViewBag.FullName ?? "User";
+}
+
+<style>
+    body {
+        background: #f4f8fc;
+    }
+
+    .dashboard-shell {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        min-height: calc(100vh - 20px);
+        gap: 24px;
+        padding: 24px;
+    }
+
+    .sidebar {
+        background: #06111f;
+        color: white;
+        border-radius: 28px;
+        padding: 26px 20px;
+    }
+
+    .brand {
+        font-size: 30px;
+        font-weight: 900;
+        margin-bottom: 6px;
+    }
+
+    .brand-sub {
+        color: #93c5fd;
+        font-size: 13px;
+        margin-bottom: 28px;
+    }
+
+    .nav-link-custom {
+        display: block;
+        color: #cbd5e1;
+        text-decoration: none;
+        padding: 13px 15px;
+        border-radius: 14px;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+
+    .nav-link-custom.active,
+    .nav-link-custom:hover {
+        background: #2563eb;
+        color: white;
+    }
+
+    .main {
+        min-width: 0;
+    }
+
+    .top-card {
+        background: white;
+        border-radius: 28px;
+        padding: 26px;
+        border: 1px solid #d8e6f3;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+        margin-bottom: 24px;
+    }
+
+    .top-card h1 {
+        margin: 0 0 6px;
+        color: #06111f;
+        font-size: 32px;
+    }
+
+    .top-card p {
+        color: #64748b;
+        margin: 0;
+    }
+
+    .role-badge {
+        display: inline-block;
+        margin-top: 16px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-weight: 800;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .kpi-card {
+        background: white;
+        border-radius: 24px;
+        padding: 22px;
+        border: 1px solid #d8e6f3;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+    }
+
+    .kpi-title {
+        color: #64748b;
+        font-weight: 800;
+        font-size: 14px;
+    }
+
+    .kpi-value {
+        color: #06111f;
+        font-size: 34px;
+        font-weight: 900;
+        margin-top: 8px;
+    }
+
+    .module-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+    }
+
+    .module-card {
+        background: white;
+        border-radius: 24px;
+        padding: 22px;
+        border: 1px solid #d8e6f3;
+        min-height: 150px;
+    }
+
+    .module-card h3 {
+        margin: 0 0 10px;
+        color: #06111f;
+    }
+
+    .module-card p {
+        color: #64748b;
+        line-height: 1.5;
+    }
+
+    .logout {
+        display: block;
+        margin-top: 26px;
+        padding: 13px 15px;
+        border-radius: 14px;
+        background: #ef4444;
+        color: white;
+        text-decoration: none;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    @@media (max-width: 950px) {
+        .dashboard-shell {
+            grid-template-columns: 1fr;
+            padding: 14px;
+        }
+
+        .kpi-grid,
+        .module-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="dashboard-shell">
+    <aside class="sidebar">
+        <div class="brand">SRMSS</div>
+        <div class="brand-sub">Smart Route Platform</div>
+
+        <a class="nav-link-custom active" href="/Dashboard">Dashboard</a>
+
+        @if (role == "SuperAdmin")
+        {
+            <a class="nav-link-custom" href="#">Manage Admins</a>
+            <a class="nav-link-custom" href="#">Manage Users</a>
+            <a class="nav-link-custom" href="#">Manage Customers</a>
+            <a class="nav-link-custom" href="#">Audit Logs</a>
+            <a class="nav-link-custom" href="#">Reports</a>
+        }
+        else if (role == "Admin")
+        {
+            <a class="nav-link-custom" href="#">Routes</a>
+            <a class="nav-link-custom" href="#">Schedules</a>
+            <a class="nav-link-custom" href="#">Drivers</a>
+            <a class="nav-link-custom" href="#">Vehicles</a>
+            <a class="nav-link-custom" href="#">Reports</a>
+        }
+        else if (role == "User")
+        {
+            <a class="nav-link-custom" href="#">My Trips</a>
+            <a class="nav-link-custom" href="#">Assigned Routes</a>
+            <a class="nav-link-custom" href="#">Fuel Log</a>
+            <a class="nav-link-custom" href="#">Report Maintenance</a>
+        }
+        else if (role == "Customer")
+        {
+            <a class="nav-link-custom" href="#">Search Routes</a>
+            <a class="nav-link-custom" href="#">Timetables</a>
+            <a class="nav-link-custom" href="#">Favorites</a>
+            <a class="nav-link-custom" href="#">Feedback</a>
+        }
+
+        <a class="logout" href="/Account/Logout">Logout</a>
+    </aside>
+
+    <main class="main">
+        <section class="top-card">
+            <h1>Welcome, @fullName</h1>
+            <p>Your dashboard is customized based on your SRMSS role.</p>
+            <span class="role-badge">@role Dashboard</span>
+        </section>
+
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Routes</div>
+                <div class="kpi-value">24</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-title">Schedules</div>
+                <div class="kpi-value">58</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-title">Active Trips</div>
+                <div class="kpi-value">12</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-title">Alerts</div>
+                <div class="kpi-value">03</div>
+            </div>
+        </section>
+
+        <section class="module-grid">
+            @if (role == "SuperAdmin")
+            {
+                <div class="module-card">
+                    <h3>System Control</h3>
+                    <p>Manage admins, users, customers and system wide access rules.</p>
+                </div>
+                <div class="module-card">
+                    <h3>Audit Logs</h3>
+                    <p>Track important user activities and security related actions.</p>
+                </div>
+                <div class="module-card">
+                    <h3>Enterprise Reports</h3>
+                    <p>View full operational reports across the SRMSS platform.</p>
+                </div>
+            }
+            else if (role == "Admin")
+            {
+                <div class="module-card">
+                    <h3>Depot Operations</h3>
+                    <p>Manage routes, route stops, schedules, vehicles and drivers.</p>
+                </div>
+                <div class="module-card">
+                    <h3>Schedule Control</h3>
+                    <p>Review schedule conflicts and manage trip status updates.</p>
+                </div>
+                <div class="module-card">
+                    <h3>Reports</h3>
+                    <p>Analyze routes, drivers, vehicles, maintenance and fuel logs.</p>
+                </div>
+            }
+            else if (role == "User")
+            {
+                <div class="module-card">
+                    <h3>Assigned Trips</h3>
+                    <p>View assigned route schedules and update trip progress.</p>
+                </div>
+                <div class="module-card">
+                    <h3>Fuel Logs</h3>
+                    <p>Submit fuel usage information for assigned operational work.</p>
+                </div>
+                <div class="module-card">
+                    <h3>Maintenance Reports</h3>
+                    <p>Report vehicle issues and operational problems to admins.</p>
+                </div>
+            }
+            else if (role == "Customer")
+            {
+                <div class="module-card">
+                    <h3>Search Routes</h3>
+                    <p>Find routes by start point, destination, timetable and status.</p>
+                </div>
+                <div class="module-card">
+                    <h3>Favorite Routes</h3>
+                    <p>Save common journeys for faster access in the customer portal.</p>
+                </div>
+                <div class="module-card">
+                    <h3>Feedback</h3>
+                    <p>Send feedback or inquiries about route and transport service quality.</p>
+                </div>
+            }
+        </section>
+    </main>
+</div>

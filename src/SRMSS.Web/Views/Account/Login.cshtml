@@ -1,0 +1,233 @@
+@model SRMSS.Web.ViewModels.LoginViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>SRMSS Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #06111f, #0b2447, #123c69);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+        }
+
+        .login-shell {
+            width: 980px;
+            max-width: 94%;
+            min-height: 560px;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+        }
+
+        .brand-panel {
+            padding: 56px;
+            color: white;
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.32), transparent 34%),
+                radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.28), transparent 36%);
+        }
+
+        .brand-panel h1 {
+            font-size: 48px;
+            margin: 0 0 14px;
+            letter-spacing: 1px;
+        }
+
+        .brand-panel p {
+            color: #cbd5e1;
+            line-height: 1.7;
+            max-width: 430px;
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 34px;
+        }
+
+        .pill {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(125, 211, 252, 0.35);
+            color: #bae6fd;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .form-panel {
+            background: #f8fafc;
+            padding: 56px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-panel h2 {
+            margin: 0 0 8px;
+            font-size: 32px;
+            color: #06111f;
+        }
+
+        .subtitle {
+            margin-bottom: 32px;
+            color: #64748b;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            margin-bottom: 18px;
+            font-size: 15px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 16px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-login:hover {
+            background: #1d4ed8;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 14px;
+            border-radius: 14px;
+            margin-bottom: 18px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .validation {
+            color: #991b1b;
+            font-size: 13px;
+            margin-top: -12px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .demo-box {
+            margin-top: 22px;
+            padding: 14px;
+            border-radius: 16px;
+            background: #e0f2fe;
+            color: #075985;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @@media (max-width: 760px) {
+            .login-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .brand-panel {
+                padding: 34px;
+            }
+
+            .brand-panel h1 {
+                font-size: 36px;
+            }
+
+            .form-panel {
+                padding: 34px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-shell">
+        <div class="brand-panel">
+            <h1>SRMSS</h1>
+            <p>
+                Smart Route Management and Scheduling System for public transport depots.
+                Manage routes, schedules, drivers, vehicles and customer route access from one secure platform.
+            </p>
+
+            <div class="pill-row">
+                <span class="pill">SuperAdmin</span>
+                <span class="pill">Admin</span>
+                <span class="pill">User</span>
+                <span class="pill">Customer</span>
+            </div>
+        </div>
+
+        <div class="form-panel">
+            <h2>Welcome Back</h2>
+            <div class="subtitle">Login to continue to your role based dashboard.</div>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="error">@ViewBag.Error</div>
+            }
+
+            <form asp-action="Login" asp-controller="Account" method="post">
+                @Html.AntiForgeryToken()
+
+                <label asp-for="Username">Username</label>
+                <input asp-for="Username" placeholder="Enter username" />
+                <span asp-validation-for="Username" class="validation"></span>
+
+                <label asp-for="Password">Password</label>
+                <input asp-for="Password" placeholder="Enter password" />
+                <span asp-validation-for="Password" class="validation"></span>
+
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+
+            <div class="demo-box">
+                Demo accounts:<br />
+                superadmin / admin123<br />
+                admin / admin123<br />
+                user / admin123<br />
+                customer / admin123
+            </div>
+        </div>
+    </div>
+</body>
+</html>
