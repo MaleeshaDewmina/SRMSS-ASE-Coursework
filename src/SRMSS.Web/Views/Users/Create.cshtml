@@ -1,0 +1,158 @@
+@model SRMSS.Web.ViewModels.UserFormViewModel
+
+@{
+    ViewData["Title"] = "Create User";
+    string currentRole = ViewBag.CurrentRole ?? "";
+}
+
+<style>
+    body {
+        background: #f4f8fc;
+    }
+
+    .form-shell {
+        max-width: 760px;
+        margin: 28px auto;
+        padding: 0 18px;
+    }
+
+    .form-card {
+        background: white;
+        border: 1px solid #d8e6f3;
+        border-radius: 28px;
+        padding: 30px;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+    }
+
+    h1 {
+        margin: 0 0 8px;
+        color: #06111f;
+        font-size: 32px;
+        font-weight: 900;
+    }
+
+    .subtitle {
+        color: #64748b;
+        margin-bottom: 26px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #334155;
+        font-weight: 800;
+    }
+
+    input,
+    select {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid #cbd5e1;
+        margin-bottom: 16px;
+        box-sizing: border-box;
+        outline: none;
+    }
+
+    input:focus,
+    select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .validation {
+        color: #991b1b;
+        display: block;
+        margin-top: -10px;
+        margin-bottom: 12px;
+        font-size: 13px;
+    }
+
+    .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .checkbox-row input {
+        width: auto;
+        margin: 0;
+    }
+
+    .btn-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 13px 18px;
+        border-radius: 14px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 900;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #64748b;
+        color: white;
+    }
+</style>
+
+<div class="form-shell">
+    <div class="form-card">
+        <h1>Create User</h1>
+        <div class="subtitle">Create a new SRMSS account with role based access.</div>
+
+        <form asp-action="Create" asp-controller="Users" method="post">
+            @Html.AntiForgeryToken()
+
+            <label asp-for="FullName">Full Name</label>
+            <input asp-for="FullName" placeholder="Enter full name" />
+            <span asp-validation-for="FullName" class="validation"></span>
+
+            <label asp-for="Username">Username</label>
+            <input asp-for="Username" placeholder="Enter username" />
+            <span asp-validation-for="Username" class="validation"></span>
+
+            <label asp-for="Email">Email</label>
+            <input asp-for="Email" placeholder="Enter email" />
+            <span asp-validation-for="Email" class="validation"></span>
+
+            <label asp-for="Role">Role</label>
+            <select asp-for="Role">
+                @if (currentRole == "SuperAdmin")
+                {
+                    <option value="Admin">Admin</option>
+                }
+
+                <option value="User">User</option>
+                <option value="Customer">Customer</option>
+            </select>
+            <span asp-validation-for="Role" class="validation"></span>
+
+            <label asp-for="Password">Password</label>
+            <input asp-for="Password" placeholder="Enter password" />
+            <span asp-validation-for="Password" class="validation"></span>
+
+            <div class="checkbox-row">
+                <input asp-for="IsActive" />
+                <label asp-for="IsActive">Active account</label>
+            </div>
+
+            <div class="btn-row">
+                <button type="submit" class="btn btn-primary">Create Account</button>
+                <a href="/Users" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

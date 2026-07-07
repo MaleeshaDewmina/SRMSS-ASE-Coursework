@@ -173,14 +173,15 @@
 
         @if (role == "SuperAdmin")
         {
-            <a class="nav-link-custom" href="#">Manage Admins</a>
-            <a class="nav-link-custom" href="#">Manage Users</a>
-            <a class="nav-link-custom" href="#">Manage Customers</a>
+            <a class="nav-link-custom" href="/Users?roleFilter=Admin">Manage Admins</a>
+            <a class="nav-link-custom" href="/Users?roleFilter=User">Manage Users</a>
+            <a class="nav-link-custom" href="/Users?roleFilter=Customer">Manage Customers</a>
             <a class="nav-link-custom" href="#">Audit Logs</a>
             <a class="nav-link-custom" href="#">Reports</a>
         }
         else if (role == "Admin")
         {
+            <a class="nav-link-custom" href="/Users">Manage Users</a>
             <a class="nav-link-custom" href="#">Routes</a>
             <a class="nav-link-custom" href="#">Schedules</a>
             <a class="nav-link-custom" href="#">Drivers</a>

@@ -1,0 +1,240 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SRMSS.Web.Data;
+using SRMSS.Web.Filters;
+using SRMSS.Web.Models;
+using SRMSS.Web.Utilities;
+using SRMSS.Web.ViewModels;
+
+namespace SRMSS.Web.Controllers
+{
+    [Route("Users")]
+    [RoleAuthorize("SuperAdmin", "Admin")]
+    public class UsersController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+
+        public UsersController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet("")]
+        public async Task<IActionResult> Index(string? roleFilter, string? search)
+        {
+            string currentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
+
+            var usersQuery = _context.AppUsers.AsQueryable();
+
+            if (currentRole == "Admin")
+            {
+                usersQuery = usersQuery.Where(u => u.Role == "User" || u.Role == "Customer");
+            }
+
+            if (!string.IsNullOrWhiteSpace(roleFilter))
+            {
+                usersQuery = usersQuery.Where(u => u.Role == roleFilter);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                usersQuery = usersQuery.Where(u =>
+                    u.FullName.Contains(search) ||
+                    u.Username.Contains(search) ||
+                    u.Email.Contains(search));
+            }
+
+            ViewBag.RoleFilter = roleFilter;
+            ViewBag.Search = search;
+            ViewBag.CurrentRole = currentRole;
+
+            var users = await usersQuery
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+
+            return View(users);
+        }
+
+        [HttpGet("Create")]
+        public IActionResult Create()
+        {
+            ViewBag.CurrentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
+            return View(new UserFormViewModel());
+        }
+
+        [HttpPost("Create")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(UserFormViewModel model)
+        {
+            string currentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
+
+            if (currentRole == "Admin" && model.Role == "Admin")
+            {
+                ModelState.AddModelError("Role", "Admin cannot create another Admin account.");
+            }
+
+            if (currentRole == "Admin" && model.Role == "SuperAdmin")
+            {
+                ModelState.AddModelError("Role", "Admin cannot create SuperAdmin account.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Password))
+            {
+                ModelState.AddModelError("Password", "Password is required");
+            }
+
+            bool usernameExists = await _context.AppUsers.AnyAsync(u => u.Username == model.Username);
+            if (usernameExists)
+            {
+                ModelState.AddModelError("Username", "Username is already taken");
+            }
+
+            bool emailExists = await _context.AppUsers.AnyAsync(u => u.Email == model.Email);
+            if (emailExists)
+            {
+                ModelState.AddModelError("Email", "Email is already registered");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.CurrentRole = currentRole;
+                return View(model);
+            }
+
+            var user = new AppUser
+            {
+                FullName = model.FullName,
+                Username = model.Username,
+                Email = model.Email,
+                PasswordHash = PasswordHasher.HashPassword(model.Password!),
+                Role = model.Role,
+                IsActive = model.IsActive,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.AppUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "User account created successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet("Edit")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            string currentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
+
+            var user = await _context.AppUsers.FindAsync(id);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (currentRole == "Admin" && (user.Role == "Admin" || user.Role == "SuperAdmin"))
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
+            var model = new UserFormViewModel
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role,
+                IsActive = user.IsActive
+            };
+
+            ViewBag.CurrentRole = currentRole;
+            return View(model);
+        }
+
+        [HttpPost("Edit")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(UserFormViewModel model)
+        {
+            string currentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
+
+            var user = await _context.AppUsers.FindAsync(model.Id);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (currentRole == "Admin" && (user.Role == "Admin" || user.Role == "SuperAdmin"))
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
+            if (currentRole == "Admin" && (model.Role == "Admin" || model.Role == "SuperAdmin"))
+            {
+                ModelState.AddModelError("Role", "Admin cannot assign Admin or SuperAdmin role.");
+            }
+
+            bool usernameExists = await _context.AppUsers
+                .AnyAsync(u => u.Username == model.Username && u.Id != model.Id);
+
+            if (usernameExists)
+            {
+                ModelState.AddModelError("Username", "Username is already taken");
+            }
+
+            bool emailExists = await _context.AppUsers
+                .AnyAsync(u => u.Email == model.Email && u.Id != model.Id);
+
+            if (emailExists)
+            {
+                ModelState.AddModelError("Email", "Email is already registered");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.CurrentRole = currentRole;
+                return View(model);
+            }
+
+            user.FullName = model.FullName;
+            user.Username = model.Username;
+            user.Email = model.Email;
+            user.Role = model.Role;
+            user.IsActive = model.IsActive;
+
+            if (!string.IsNullOrWhiteSpace(model.Password))
+            {
+                user.PasswordHash = PasswordHasher.HashPassword(model.Password);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "User account updated successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost("ToggleStatus")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            string currentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
+
+            var user = await _context.AppUsers.FindAsync(id);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (currentRole == "Admin" && (user.Role == "Admin" || user.Role == "SuperAdmin"))
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
+            user.IsActive = !user.IsActive;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = user.IsActive ? "User activated." : "User deactivated.";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+}
