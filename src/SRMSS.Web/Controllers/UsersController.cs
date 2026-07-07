@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SRMSS.Web.Data;
 using SRMSS.Web.Filters;
 using SRMSS.Web.Models;
+using SRMSS.Web.Services;
 using SRMSS.Web.Utilities;
 using SRMSS.Web.ViewModels;
 
@@ -13,10 +14,12 @@ namespace SRMSS.Web.Controllers
     public class UsersController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
-        public UsersController(ApplicationDbContext context)
+        public UsersController(ApplicationDbContext context, AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         [HttpGet("")]
@@ -115,6 +118,13 @@ namespace SRMSS.Web.Controllers
             _context.AppUsers.Add(user);
             await _context.SaveChangesAsync();
 
+            await _auditLogService.LogAsync(
+                "Create User",
+                "AppUsers",
+                user.Id,
+                $"Created {user.Role} account for {user.FullName}"
+            );
+
             TempData["Success"] = "User account created successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -133,6 +143,13 @@ namespace SRMSS.Web.Controllers
 
             if (currentRole == "Admin" && (user.Role == "Admin" || user.Role == "SuperAdmin"))
             {
+                await _auditLogService.LogAsync(
+                    "Access Denied",
+                    "AppUsers",
+                    user.Id,
+                    $"Admin tried to edit protected account: {user.Username}"
+                );
+
                 return RedirectToAction("AccessDenied", "Account");
             }
 
@@ -165,6 +182,13 @@ namespace SRMSS.Web.Controllers
 
             if (currentRole == "Admin" && (user.Role == "Admin" || user.Role == "SuperAdmin"))
             {
+                await _auditLogService.LogAsync(
+                    "Access Denied",
+                    "AppUsers",
+                    user.Id,
+                    $"Admin tried to update protected account: {user.Username}"
+                );
+
                 return RedirectToAction("AccessDenied", "Account");
             }
 
@@ -195,6 +219,9 @@ namespace SRMSS.Web.Controllers
                 return View(model);
             }
 
+            string oldRole = user.Role;
+            bool oldStatus = user.IsActive;
+
             user.FullName = model.FullName;
             user.Username = model.Username;
             user.Email = model.Email;
@@ -207,6 +234,17 @@ namespace SRMSS.Web.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            string passwordMessage = string.IsNullOrWhiteSpace(model.Password)
+                ? "Password not changed"
+                : "Password reset";
+
+            await _auditLogService.LogAsync(
+                "Update User",
+                "AppUsers",
+                user.Id,
+                $"Updated user {user.Username}. Role: {oldRole} to {user.Role}. Status: {oldStatus} to {user.IsActive}. {passwordMessage}."
+            );
 
             TempData["Success"] = "User account updated successfully.";
             return RedirectToAction(nameof(Index));
@@ -227,11 +265,27 @@ namespace SRMSS.Web.Controllers
 
             if (currentRole == "Admin" && (user.Role == "Admin" || user.Role == "SuperAdmin"))
             {
+                await _auditLogService.LogAsync(
+                    "Access Denied",
+                    "AppUsers",
+                    user.Id,
+                    $"Admin tried to change status of protected account: {user.Username}"
+                );
+
                 return RedirectToAction("AccessDenied", "Account");
             }
 
             user.IsActive = !user.IsActive;
             await _context.SaveChangesAsync();
+
+            string action = user.IsActive ? "Activate User" : "Deactivate User";
+
+            await _auditLogService.LogAsync(
+                action,
+                "AppUsers",
+                user.Id,
+                $"{action}: {user.Username}"
+            );
 
             TempData["Success"] = user.IsActive ? "User activated." : "User deactivated.";
             return RedirectToAction(nameof(Index));

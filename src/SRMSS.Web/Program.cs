@@ -2,6 +2,7 @@
 using SRMSS.Web.Data;
 using SRMSS.Web.Models;
 using SRMSS.Web.Utilities;
+using SRMSS.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,9 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<AuditLogService>();
 
 var app = builder.Build();
 
