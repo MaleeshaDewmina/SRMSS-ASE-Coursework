@@ -153,6 +153,162 @@ namespace SRMSS.Web.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            int? userId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var user = await _context.AppUsers.FindAsync(userId.Value);
+
+            if (user == null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Account");
+            }
+
+            var model = new ProfileViewModel
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(ProfileViewModel model)
+        {
+            int? userId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var user = await _context.AppUsers.FindAsync(userId.Value);
+
+            if (user == null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Account");
+            }
+
+            bool usernameExists = await _context.AppUsers
+                .AnyAsync(u => u.Username == model.Username && u.Id != user.Id);
+
+            if (usernameExists)
+            {
+                ModelState.AddModelError("Username", "Username is already taken");
+            }
+
+            bool emailExists = await _context.AppUsers
+                .AnyAsync(u => u.Email == model.Email && u.Id != user.Id);
+
+            if (emailExists)
+            {
+                ModelState.AddModelError("Email", "Email is already registered");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.Role = user.Role;
+                return View(model);
+            }
+
+            user.FullName = model.FullName;
+            user.Username = model.Username;
+            user.Email = model.Email;
+
+            await _context.SaveChangesAsync();
+
+            HttpContext.Session.SetString(SessionKeys.FullName, user.FullName);
+            HttpContext.Session.SetString(SessionKeys.Username, user.Username);
+
+            await _auditLogService.LogAsync(
+                "Update Profile",
+                "AppUsers",
+                user.Id,
+                $"{user.Username} updated their profile details"
+            );
+
+            TempData["Success"] = "Profile updated successfully.";
+            return RedirectToAction("Profile", "Account");
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            int? userId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            int? userId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _context.AppUsers.FindAsync(userId.Value);
+
+            if (user == null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Account");
+            }
+
+            bool currentPasswordValid = PasswordHasher.VerifyPassword(model.CurrentPassword, user.PasswordHash);
+
+            if (!currentPasswordValid)
+            {
+                ModelState.AddModelError("CurrentPassword", "Current password is incorrect");
+                return View(model);
+            }
+
+            if (model.CurrentPassword == model.NewPassword)
+            {
+                ModelState.AddModelError("NewPassword", "New password must be different from current password");
+                return View(model);
+            }
+
+            user.PasswordHash = PasswordHasher.HashPassword(model.NewPassword);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                "Change Password",
+                "AppUsers",
+                user.Id,
+                $"{user.Username} changed their account password"
+            );
+
+            TempData["Success"] = "Password changed successfully.";
+            return RedirectToAction("Profile", "Account");
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Logout()
         {
             string? username = HttpContext.Session.GetString(SessionKeys.Username);
