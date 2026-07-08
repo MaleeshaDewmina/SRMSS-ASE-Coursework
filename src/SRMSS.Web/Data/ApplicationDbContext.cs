@@ -19,6 +19,7 @@ namespace SRMSS.Web.Data
         public DbSet<FuelLog> FuelLogs { get; set; }
         public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<FavoriteRoute> FavoriteRoutes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

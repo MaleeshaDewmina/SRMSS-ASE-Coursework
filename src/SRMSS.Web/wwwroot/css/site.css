@@ -4256,3 +4256,94 @@ a {
         margin-top: 8px;
     }
 }
+
+/* Advanced Database Favorite Routes */
+
+.favorite-routes-list {
+    display: grid;
+    gap: 12px;
+}
+
+.favorite-route-item {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.favorite-route-item strong {
+    display: block;
+    color: #0F172A;
+    font-weight: 900;
+    margin-bottom: 4px;
+}
+
+.favorite-route-item span {
+    display: block;
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.favorite-route-item small {
+    display: block;
+    color: #94A3B8;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.favorite-route-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.favorite-inline-form,
+.favorite-remove-form {
+    margin: 0;
+}
+
+.favorite-view-link,
+.favorite-remove-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.favorite-view-link {
+    background: #EAF2FF;
+    color: #1E3A8A;
+}
+
+.favorite-remove-btn {
+    background: #FEF2F2;
+    color: #EF4444;
+}
+
+.favorite-route-btn.favorite-active {
+    background: #F59E0B;
+    color: white;
+}
+
+.srmss-alert {
+    border-radius: 16px;
+    font-weight: 800;
+}
+
+@media (max-width: 700px) {
+    .favorite-route-item {
+        display: block;
+    }
+
+    .favorite-route-actions {
+        margin-top: 12px;
+    }
+}
