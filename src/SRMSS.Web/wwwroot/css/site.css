@@ -3485,3 +3485,774 @@ a {
         min-height: 20px;
     }
 }
+
+/* Customer Route Search */
+
+.customer-route-hero,
+.customer-route-details-hero {
+    background: linear-gradient(135deg, #0F172A, #1E3A8A);
+    border-radius: 24px;
+    padding: 28px;
+    color: white;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: center;
+    box-shadow: 0 18px 35px rgba(15, 23, 42, 0.18);
+}
+
+.customer-route-hero h2,
+.customer-route-details-hero h2 {
+    font-size: 34px;
+    font-weight: 900;
+    margin: 12px 0 8px;
+}
+
+.customer-route-hero p,
+.customer-route-details-hero p {
+    color: #D7E4F7;
+    font-weight: 600;
+    margin: 0;
+    max-width: 720px;
+}
+
+.customer-portal-pill {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: white;
+    border-radius: 999px;
+    padding: 7px 13px;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.customer-route-hero-card {
+    background: white;
+    color: #0F172A;
+    border-radius: 20px;
+    padding: 22px;
+    min-width: 180px;
+    text-align: center;
+}
+
+.customer-route-hero-card strong {
+    display: block;
+    font-size: 38px;
+    font-weight: 900;
+}
+
+.customer-route-hero-card span {
+    color: #64748B;
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.customer-search-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 180px 140px;
+    gap: 14px;
+    align-items: end;
+}
+
+.customer-search-button-area {
+    display: flex;
+    align-items: end;
+}
+
+.customer-route-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 0.8fr);
+    gap: 24px;
+}
+
+.customer-route-results {
+    display: grid;
+    gap: 18px;
+}
+
+.customer-route-card {
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    padding: 18px;
+    background: #FFFFFF;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+.customer-route-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: start;
+    margin-bottom: 14px;
+}
+
+.customer-route-card-top h4 {
+    font-size: 18px;
+    font-weight: 900;
+    color: #0F172A;
+    margin: 0 0 5px;
+}
+
+.customer-route-card-top p {
+    color: #64748B;
+    font-weight: 700;
+    margin: 0;
+}
+
+.customer-route-meta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.customer-route-meta div {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 12px;
+}
+
+.customer-route-meta span {
+    display: block;
+    color: #64748B;
+    font-size: 11px;
+    font-weight: 900;
+    margin-bottom: 5px;
+}
+
+.customer-route-meta strong {
+    color: #0F172A;
+    font-weight: 900;
+}
+
+.customer-mini-flow {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 13px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.customer-mini-flow span {
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.flow-start {
+    color: #16A34A;
+}
+
+.flow-stop {
+    color: #2563EB;
+}
+
+.flow-end {
+    color: #DC2626;
+}
+
+.flow-more {
+    color: #F59E0B;
+}
+
+.flow-arrow {
+    color: #64748B;
+}
+
+.customer-route-schedule-preview {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.customer-route-schedule-preview span {
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.customer-route-schedule-preview strong {
+    color: #0F172A;
+    font-weight: 900;
+}
+
+.customer-route-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.customer-help-list {
+    display: grid;
+    gap: 14px;
+}
+
+.customer-help-list div {
+    display: flex;
+    gap: 12px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px;
+}
+
+.customer-help-list span {
+    background: #1E3A8A;
+    color: white;
+    border-radius: 999px;
+    width: 28px;
+    height: 28px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.customer-help-list p {
+    margin: 0;
+    color: #334155;
+    font-weight: 700;
+}
+
+.customer-empty-state {
+    background: #F8FAFC;
+    border: 1px dashed #CBD5E1;
+    border-radius: 18px;
+    padding: 28px;
+    text-align: center;
+    color: #64748B;
+    font-weight: 800;
+}
+
+.customer-empty-state h4 {
+    color: #0F172A;
+    font-weight: 900;
+}
+
+.customer-empty-state.small {
+    padding: 18px;
+}
+
+.customer-route-details-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    min-width: 520px;
+}
+
+.customer-route-details-stats div {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 16px;
+    padding: 14px;
+}
+
+.customer-route-details-stats span {
+    display: block;
+    color: #D7E4F7;
+    font-size: 11px;
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.customer-route-details-stats strong {
+    color: white;
+    font-weight: 900;
+}
+
+.customer-route-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+    gap: 24px;
+}
+
+.customer-detail-flow {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 8px;
+}
+
+.detail-flow-item {
+    min-width: 180px;
+    border-radius: 16px;
+    padding: 15px;
+    border: 1px solid #CBD5E1;
+    flex: 0 0 auto;
+}
+
+.detail-flow-item span {
+    display: block;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.detail-flow-item strong {
+    display: block;
+    color: #0F172A;
+    font-weight: 900;
+}
+
+.detail-flow-item small {
+    display: block;
+    color: #64748B;
+    font-weight: 800;
+    margin-top: 5px;
+}
+
+.detail-flow-item.start {
+    background: #ECFDF3;
+    border-color: #86EFAC;
+}
+
+.detail-flow-item.start span {
+    color: #16A34A;
+}
+
+.detail-flow-item.stop {
+    background: #EFF6FF;
+    border-color: #93C5FD;
+}
+
+.detail-flow-item.stop span {
+    color: #2563EB;
+}
+
+.detail-flow-item.end {
+    background: #FEF2F2;
+    border-color: #FCA5A5;
+}
+
+.detail-flow-item.end span {
+    color: #DC2626;
+}
+
+.detail-flow-arrow {
+    display: flex;
+    align-items: center;
+    color: #1E3A8A;
+    font-size: 24px;
+    font-weight: 900;
+}
+
+.customer-stop-list {
+    display: grid;
+    gap: 12px;
+}
+
+.customer-stop-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 13px;
+}
+
+.customer-stop-number {
+    background: #1E3A8A;
+    color: white;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.customer-stop-row strong {
+    display: block;
+    color: #0F172A;
+    font-weight: 900;
+}
+
+.customer-stop-row span {
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+@media (max-width: 1100px) {
+    .customer-route-layout,
+    .customer-route-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-route-details-hero {
+        display: block;
+    }
+
+    .customer-route-details-stats {
+        min-width: 0;
+        margin-top: 18px;
+    }
+}
+
+@media (max-width: 800px) {
+    .customer-route-hero {
+        display: block;
+    }
+
+    .customer-route-hero-card {
+        margin-top: 18px;
+    }
+
+    .customer-search-grid,
+    .customer-route-meta,
+    .customer-route-details-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-detail-flow {
+        flex-direction: column;
+        overflow-x: hidden;
+    }
+
+    .detail-flow-arrow {
+        transform: rotate(90deg);
+        justify-content: center;
+    }
+}
+
+/* Customer Details Inline Map */
+
+.customer-inline-map-panel {
+    margin-top: 26px;
+    background: #F8FAFC;
+    border: 1px solid #DCEEF5;
+    border-radius: 20px;
+    padding: 18px;
+}
+
+.customer-inline-map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.customer-inline-map-header h4 {
+    color: #0F172A;
+    font-size: 18px;
+    font-weight: 900;
+    margin: 0 0 4px;
+}
+
+.customer-inline-map-header p {
+    color: #64748B;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.customer-inline-map-header span {
+    background: #EFF6FF;
+    color: #1E3A8A;
+    border: 1px solid #BFDBFE;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.customer-inline-map-frame {
+    height: 360px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #CBD5E1;
+    background: white;
+}
+
+.customer-inline-map-frame .live-route-map {
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+}
+
+.customer-inline-map-actions {
+    margin-top: 14px;
+}
+
+@media (max-width: 700px) {
+    .customer-inline-map-header {
+        display: block;
+    }
+
+    .customer-inline-map-header span {
+        display: inline-flex;
+        margin-top: 10px;
+    }
+
+    .customer-inline-map-frame,
+    .customer-inline-map-frame .live-route-map {
+        height: 300px;
+        min-height: 300px;
+    }
+}
+
+/* Customer Favorite Routes */
+
+.favorite-routes-list {
+    display: grid;
+    gap: 12px;
+}
+
+.favorite-route-item {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.favorite-route-item strong {
+    display: block;
+    color: #0F172A;
+    font-weight: 900;
+    margin-bottom: 4px;
+}
+
+.favorite-route-item span {
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.favorite-route-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.favorite-view-link,
+.favorite-remove-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.favorite-view-link {
+    background: #EAF2FF;
+    color: #1E3A8A;
+}
+
+.favorite-remove-btn {
+    background: #FEF2F2;
+    color: #EF4444;
+}
+
+.favorite-route-btn.favorite-active {
+    background: #F59E0B;
+    color: white;
+}
+
+@media (max-width: 700px) {
+    .favorite-route-item {
+        display: block;
+    }
+
+    .favorite-route-actions {
+        margin-top: 12px;
+    }
+}
+
+/* Trip Status Board */
+
+.trip-status-hero {
+    background: linear-gradient(135deg, #0F172A, #1E3A8A);
+    color: white;
+    border-radius: 26px;
+    padding: 28px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: center;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+}
+
+.trip-status-hero h2 {
+    font-size: 30px;
+    font-weight: 900;
+    margin: 12px 0 8px;
+}
+
+.trip-status-hero p {
+    color: #CBD5E1;
+    max-width: 700px;
+    margin: 0;
+    font-weight: 600;
+}
+
+.trip-status-pill {
+    display: inline-flex;
+    background: rgba(245, 158, 11, 0.16);
+    color: #FBBF24;
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    border-radius: 999px;
+    padding: 7px 13px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.trip-status-hero-card {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 20px;
+    padding: 20px 24px;
+    min-width: 150px;
+    text-align: center;
+}
+
+.trip-status-hero-card strong {
+    display: block;
+    font-size: 34px;
+    font-weight: 950;
+}
+
+.trip-status-hero-card span {
+    color: #CBD5E1;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.trip-status-metrics {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(120px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.trip-status-metric-card {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.trip-status-metric-card span {
+    display: block;
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.trip-status-metric-card strong {
+    color: #0F172A;
+    font-size: 28px;
+    font-weight: 950;
+}
+
+.trip-status-metric-card.warning {
+    border-color: #FDE68A;
+    background: #FFFBEB;
+}
+
+.trip-status-metric-card.success {
+    border-color: #BBF7D0;
+    background: #F0FDF4;
+}
+
+.trip-status-metric-card.danger {
+    border-color: #FECACA;
+    background: #FEF2F2;
+}
+
+.trip-status-filter-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 160px 120px;
+    gap: 16px;
+    align-items: end;
+}
+
+.trip-status-filter-actions {
+    display: flex;
+    align-items: end;
+}
+
+.trip-status-update-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 230px;
+}
+
+.small-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+.status-pill.purple {
+    background: #F3E8FF;
+    color: #7E22CE;
+    border: 1px solid #E9D5FF;
+}
+
+.srmss-alert {
+    border-radius: 16px;
+    font-weight: 800;
+}
+
+@media (max-width: 1100px) {
+    .trip-status-metrics {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .trip-status-filter-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .trip-status-hero {
+        display: block;
+    }
+
+    .trip-status-hero-card {
+        margin-top: 18px;
+    }
+
+    .trip-status-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .trip-status-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .trip-status-update-form {
+        display: block;
+        min-width: 170px;
+    }
+
+    .trip-status-update-form button {
+        width: 100%;
+        margin-top: 8px;
+    }
+}
