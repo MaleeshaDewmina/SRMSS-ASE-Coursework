@@ -16,7 +16,9 @@ namespace SRMSS.Web.Controllers
 
         private string GetCustomerKey()
         {
-            if (User.Identity != null && User.Identity.IsAuthenticated && !string.IsNullOrWhiteSpace(User.Identity.Name))
+            if (User.Identity != null &&
+                User.Identity.IsAuthenticated &&
+                !string.IsNullOrWhiteSpace(User.Identity.Name))
             {
                 return User.Identity.Name;
             }
@@ -24,6 +26,7 @@ namespace SRMSS.Web.Controllers
             return "DEMO_CUSTOMER";
         }
 
+        // GET: CustomerRoutes
         public async Task<IActionResult> Index(string? from, string? to)
         {
             var customerKey = GetCustomerKey();
@@ -35,6 +38,7 @@ namespace SRMSS.Web.Controllers
                 .Include(r => r.Schedules)
                     .ThenInclude(s => s.Vehicle)
                 .Where(r => r.Status == "Active")
+                .AsSplitQuery()
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(from))
@@ -75,6 +79,7 @@ namespace SRMSS.Web.Controllers
             return View(routes);
         }
 
+        // GET: CustomerRoutes/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -82,39 +87,70 @@ namespace SRMSS.Web.Controllers
                 return NotFound();
             }
 
+            var customerKey = GetCustomerKey();
+
             var route = await _context.TransportRoutes
                 .Include(r => r.RouteStops)
                 .Include(r => r.Schedules)
                     .ThenInclude(s => s.Driver)
                 .Include(r => r.Schedules)
                     .ThenInclude(s => s.Vehicle)
-                .FirstOrDefaultAsync(r => r.Id == id && r.Status == "Active");
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(r =>
+                    r.Id == id &&
+                    r.Status == "Active");
 
             if (route == null)
             {
                 return NotFound();
             }
 
+            var isFavorite = await _context.FavoriteRoutes
+                .AnyAsync(f =>
+                    f.CustomerKey == customerKey &&
+                    f.TransportRouteId == route.Id);
+
+            ViewBag.IsFavorite = isFavorite;
+
             return View(route);
         }
 
+        // POST: CustomerRoutes/AddFavorite
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddFavorite(int routeId, string? from, string? to)
+        public async Task<IActionResult> AddFavorite(
+            int routeId,
+            string? from,
+            string? to,
+            bool returnToDetails = false)
         {
             var customerKey = GetCustomerKey();
 
             var routeExists = await _context.TransportRoutes
-                .AnyAsync(r => r.Id == routeId && r.Status == "Active");
+                .AnyAsync(r =>
+                    r.Id == routeId &&
+                    r.Status == "Active");
 
             if (!routeExists)
             {
                 TempData["ErrorMessage"] = "Route could not be found.";
-                return RedirectToAction(nameof(Index), new { from, to });
+
+                if (returnToDetails)
+                {
+                    return RedirectToAction(
+                        nameof(Details),
+                        new { id = routeId });
+                }
+
+                return RedirectToAction(
+                    nameof(Index),
+                    new { from, to });
             }
 
             var alreadySaved = await _context.FavoriteRoutes
-                .AnyAsync(f => f.CustomerKey == customerKey && f.TransportRouteId == routeId);
+                .AnyAsync(f =>
+                    f.CustomerKey == customerKey &&
+                    f.TransportRouteId == routeId);
 
             if (!alreadySaved)
             {
@@ -126,36 +162,71 @@ namespace SRMSS.Web.Controllers
                 };
 
                 _context.FavoriteRoutes.Add(favoriteRoute);
+
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Route saved to favorites.";
+                TempData["SuccessMessage"] =
+                    "Route saved to favorites successfully.";
             }
             else
             {
-                TempData["ErrorMessage"] = "This route is already in favorites.";
+                TempData["ErrorMessage"] =
+                    "This route is already saved in favorites.";
             }
 
-            return RedirectToAction(nameof(Index), new { from, to });
+            if (returnToDetails)
+            {
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id = routeId });
+            }
+
+            return RedirectToAction(
+                nameof(Index),
+                new { from, to });
         }
 
+        // POST: CustomerRoutes/RemoveFavorite
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveFavorite(int routeId, string? from, string? to)
+        public async Task<IActionResult> RemoveFavorite(
+            int routeId,
+            string? from,
+            string? to,
+            bool returnToDetails = false)
         {
             var customerKey = GetCustomerKey();
 
             var favoriteRoute = await _context.FavoriteRoutes
-                .FirstOrDefaultAsync(f => f.CustomerKey == customerKey && f.TransportRouteId == routeId);
+                .FirstOrDefaultAsync(f =>
+                    f.CustomerKey == customerKey &&
+                    f.TransportRouteId == routeId);
 
             if (favoriteRoute != null)
             {
                 _context.FavoriteRoutes.Remove(favoriteRoute);
+
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Route removed from favorites.";
+                TempData["SuccessMessage"] =
+                    "Route removed from favorites successfully.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] =
+                    "This route is not currently saved in favorites.";
             }
 
-            return RedirectToAction(nameof(Index), new { from, to });
+            if (returnToDetails)
+            {
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id = routeId });
+            }
+
+            return RedirectToAction(
+                nameof(Index),
+                new { from, to });
         }
     }
 }

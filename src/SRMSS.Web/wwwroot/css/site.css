@@ -4347,3 +4347,241 @@ a {
         margin-top: 12px;
     }
 }
+
+/* =========================================================
+   CUSTOMER ROUTE DETAILS TOP ACTIONS
+   ========================================================= */
+
+.customer-details-top-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.customer-details-action-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.customer-details-action-group form {
+    margin: 0;
+}
+
+.customer-details-action-group .favorite-route-btn {
+    min-width: 140px;
+}
+
+.customer-details-action-group .favorite-route-btn.favorite-active {
+    background: #F59E0B;
+    border-color: #F59E0B;
+    color: #FFFFFF;
+}
+
+
+/* =========================================================
+   CUSTOMER DETAILS INLINE MAP
+   ========================================================= */
+
+.customer-inline-map-panel {
+    margin-top: 26px;
+    background: #F8FAFC;
+    border: 1px solid #DCEEF5;
+    border-radius: 20px;
+    padding: 18px;
+}
+
+.customer-inline-map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.customer-inline-map-header h4 {
+    color: #0F172A;
+    font-size: 18px;
+    font-weight: 900;
+    margin: 0 0 4px;
+}
+
+.customer-inline-map-header p {
+    color: #64748B;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.customer-inline-map-header span {
+    background: #EFF6FF;
+    color: #1E3A8A;
+    border: 1px solid #BFDBFE;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.customer-inline-map-frame {
+    height: 360px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #CBD5E1;
+    background: #FFFFFF;
+}
+
+.customer-inline-map-frame .live-route-map {
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+}
+
+.customer-inline-map-actions {
+    margin-top: 14px;
+}
+
+
+/* =========================================================
+   DATABASE FAVORITE ROUTES
+   ========================================================= */
+
+.favorite-routes-list {
+    display: grid;
+    gap: 12px;
+}
+
+.favorite-route-item {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px;
+
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.favorite-route-item strong {
+    display: block;
+    color: #0F172A;
+    font-weight: 900;
+    margin-bottom: 4px;
+}
+
+.favorite-route-item span {
+    display: block;
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.favorite-route-item small {
+    display: block;
+    color: #94A3B8;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.favorite-route-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.favorite-inline-form,
+.favorite-remove-form {
+    margin: 0;
+}
+
+.favorite-view-link,
+.favorite-remove-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.favorite-view-link {
+    background: #EAF2FF;
+    color: #1E3A8A;
+}
+
+.favorite-view-link:hover {
+    background: #DBEAFE;
+    color: #1E3A8A;
+}
+
+.favorite-remove-btn {
+    background: #FEF2F2;
+    color: #EF4444;
+}
+
+.favorite-remove-btn:hover {
+    background: #FEE2E2;
+}
+
+.favorite-route-btn.favorite-active {
+    background: #F59E0B;
+    border-color: #F59E0B;
+    color: #FFFFFF;
+}
+
+.srmss-alert {
+    border-radius: 16px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .customer-details-top-actions {
+        display: block;
+    }
+
+    .customer-details-action-group {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .customer-details-action-group .srmss-btn,
+    .customer-details-action-group form,
+    .customer-details-action-group button {
+        width: 100%;
+    }
+
+    .customer-inline-map-header {
+        display: block;
+    }
+
+    .customer-inline-map-header span {
+        display: inline-flex;
+        margin-top: 10px;
+    }
+
+    .customer-inline-map-frame,
+    .customer-inline-map-frame .live-route-map {
+        height: 300px;
+        min-height: 300px;
+    }
+
+    .favorite-route-item {
+        display: block;
+    }
+
+    .favorite-route-actions {
+        margin-top: 12px;
+    }
+}
