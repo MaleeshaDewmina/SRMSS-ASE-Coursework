@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SRMSS.Web.Data;
 
@@ -11,9 +12,11 @@ using SRMSS.Web.Data;
 namespace SRMSS.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260703164100_ImproveRouteStopScheduleModels")]
+    partial class ImproveRouteStopScheduleModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,32 +152,6 @@ namespace SRMSS.Web.Migrations
                         .IsUnique();
 
                     b.ToTable("Drivers");
-                });
-
-            modelBuilder.Entity("SRMSS.Web.Models.FavoriteRoute", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CustomerKey")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("SavedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TransportRouteId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TransportRouteId");
-
-                    b.ToTable("FavoriteRoutes");
                 });
 
             modelBuilder.Entity("SRMSS.Web.Models.FuelLog", b =>
@@ -413,17 +390,6 @@ namespace SRMSS.Web.Migrations
                         .HasForeignKey("AppUserId");
 
                     b.Navigation("AppUser");
-                });
-
-            modelBuilder.Entity("SRMSS.Web.Models.FavoriteRoute", b =>
-                {
-                    b.HasOne("SRMSS.Web.Models.TransportRoute", "TransportRoute")
-                        .WithMany()
-                        .HasForeignKey("TransportRouteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TransportRoute");
                 });
 
             modelBuilder.Entity("SRMSS.Web.Models.FuelLog", b =>

@@ -1,0 +1,881 @@
+@using System.Text.Json
+@model SRMSS.Web.Models.TransportRoute
+
+@{
+    ViewData["Title"] = "Customer Route Details";
+    ViewData["PageTitle"] = "Customer Route Details";
+    ViewData["PageSubtitle"] = "View public route information, stops, timetable and trip status.";
+
+    var isFavorite = ViewBag.IsFavorite is bool favorite && favorite;
+
+    var orderedStops = Model.RouteStops != null
+        ? Model.RouteStops.OrderBy(s => s.StopOrder).ToList()
+        : new List<SRMSS.Web.Models.RouteStop>();
+
+    var schedules = Model.Schedules != null
+        ? Model.Schedules
+            .OrderBy(s => s.ScheduleDate)
+            .ThenBy(s => s.DepartureTime)
+            .ToList()
+        : new List<SRMSS.Web.Models.Schedule>();
+
+    var origin = System.Uri.EscapeDataString(Model.StartPoint ?? "");
+
+    var destination = System.Uri.EscapeDataString(Model.EndPoint ?? "");
+
+    var waypoints = string.Join(
+        "%7C",
+        orderedStops.Select(
+            s => System.Uri.EscapeDataString(s.StopName ?? "")
+        )
+    );
+
+    var mapUrl = "https://www.google.com/maps/dir/?api=1"
+        + "&origin=" + origin
+        + "&destination=" + destination
+        + (string.IsNullOrWhiteSpace(waypoints)
+            ? ""
+            : "&waypoints=" + waypoints)
+        + "&travelmode=driving";
+
+    var routeData = new
+    {
+        routeName = Model.RouteName,
+        startPoint = Model.StartPoint,
+        endPoint = Model.EndPoint,
+        distanceKm = Model.DistanceKm,
+        estimatedDurationMinutes = Model.EstimatedDurationMinutes,
+        serviceType = Model.ServiceType,
+        status = Model.Status,
+
+        stops = orderedStops
+            .Select(s => new
+            {
+                stopOrder = s.StopOrder,
+                stopName = s.StopName,
+                estimatedMinutes = s.EstimatedMinutesFromStart
+            })
+            .ToList()
+    };
+
+    var routeDataJson = JsonSerializer.Serialize(
+        routeData,
+        new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }
+    );
+}
+
+<div class="customer-details-top-actions">
+
+    <a asp-controller="CustomerRoutes"
+       asp-action="Index"
+       class="srmss-btn secondary">
+        Back to Search
+    </a>
+
+    <div class="customer-details-action-group">
+
+        @if (isFavorite)
+        {
+            <form asp-controller="CustomerRoutes"
+                  asp-action="RemoveFavorite"
+                  method="post"
+                  class="favorite-inline-form">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="routeId"
+                       value="@Model.Id" />
+
+                <input type="hidden"
+                       name="returnToDetails"
+                       value="true" />
+
+                <button type="submit"
+                        class="srmss-btn secondary favorite-route-btn favorite-active">
+                    Saved ✓
+                </button>
+
+            </form>
+        }
+        else
+        {
+            <form asp-controller="CustomerRoutes"
+                  asp-action="AddFavorite"
+                  method="post"
+                  class="favorite-inline-form">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="routeId"
+                       value="@Model.Id" />
+
+                <input type="hidden"
+                       name="returnToDetails"
+                       value="true" />
+
+                <button type="submit"
+                        class="srmss-btn secondary favorite-route-btn">
+                    Save Favorite
+                </button>
+
+            </form>
+        }
+
+        <a href="@mapUrl"
+           target="_blank"
+           class="srmss-btn primary">
+            Open Full Route in Google Maps
+        </a>
+
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success srmss-alert mb-4">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-warning srmss-alert mb-4">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="customer-route-details-hero">
+
+    <div>
+
+        <span class="customer-portal-pill">
+            Public Route
+        </span>
+
+        <h2>@Model.RouteName</h2>
+
+        <p>
+            @Model.StartPoint → @Model.EndPoint
+        </p>
+
+    </div>
+
+    <div class="customer-route-details-stats">
+
+        <div>
+            <span>Distance</span>
+            <strong>@Model.DistanceKm km</strong>
+        </div>
+
+        <div>
+            <span>Duration</span>
+            <strong>@Model.EstimatedDurationMinutes mins</strong>
+        </div>
+
+        <div>
+            <span>Service Type</span>
+            <strong>@Model.ServiceType</strong>
+        </div>
+
+        <div>
+            <span>Status</span>
+            <strong>@Model.Status</strong>
+        </div>
+
+    </div>
+</div>
+
+<div class="customer-route-detail-grid">
+
+    <div class="srmss-card">
+
+        <h3 class="card-title">
+            Complete Route Flow
+        </h3>
+
+        <p class="card-subtitle">
+            Start point, ordered stops and final destination.
+        </p>
+
+        <div class="customer-detail-flow">
+
+            <div class="detail-flow-item start">
+
+                <span>Start Point</span>
+
+                <strong>
+                    @Model.StartPoint
+                </strong>
+
+            </div>
+
+            @foreach (var stop in orderedStops)
+            {
+                <div class="detail-flow-arrow">
+                    →
+                </div>
+
+                <div class="detail-flow-item stop">
+
+                    <span>
+                        Stop @stop.StopOrder
+                    </span>
+
+                    <strong>
+                        @stop.StopName
+                    </strong>
+
+                    <small>
+                        @stop.EstimatedMinutesFromStart mins from start
+                    </small>
+
+                </div>
+            }
+
+            <div class="detail-flow-arrow">
+                →
+            </div>
+
+            <div class="detail-flow-item end">
+
+                <span>End Point</span>
+
+                <strong>
+                    @Model.EndPoint
+                </strong>
+
+            </div>
+
+        </div>
+
+        <div class="customer-inline-map-panel">
+
+            <div class="customer-inline-map-header">
+
+                <div>
+
+                    <h4>
+                        Route Map Preview
+                    </h4>
+
+                    <p>
+                        Map preview generated from the selected route stops.
+                    </p>
+
+                </div>
+
+                <span>
+                    Live Map
+                </span>
+
+            </div>
+
+            <div class="customer-inline-map-frame">
+
+                <div id="customerRouteMap"
+                     class="live-route-map">
+
+                    <div class="map-loading-message">
+                        Loading online route map...
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div id="missingCustomerRoutePoints"></div>
+
+            <div class="customer-inline-map-actions">
+
+                <a href="@mapUrl"
+                   target="_blank"
+                   class="srmss-btn primary">
+                    Open Full Route in Google Maps
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="srmss-card">
+
+        <h3 class="card-title">
+            Route Stops
+        </h3>
+
+        <p class="card-subtitle">
+            Stops shown in correct order.
+        </p>
+
+        @if (orderedStops.Any())
+        {
+            <div class="customer-stop-list">
+
+                @foreach (var stop in orderedStops)
+                {
+                    <div class="customer-stop-row">
+
+                        <div class="customer-stop-number">
+                            @stop.StopOrder
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                @stop.StopName
+                            </strong>
+
+                            <span>
+                                @stop.EstimatedMinutesFromStart mins from start
+                            </span>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="customer-empty-state small">
+                No intermediary stops added for this route.
+            </div>
+        }
+
+    </div>
+
+</div>
+
+<div class="srmss-card mt-4">
+
+    <h3 class="card-title">
+        Timetable and Trip Status
+    </h3>
+
+    <p class="card-subtitle">
+        Public schedule information for this route.
+    </p>
+
+    <div class="table-responsive">
+
+        <table class="srmss-table">
+
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Departure</th>
+                    <th>Arrival</th>
+                    <th>Driver</th>
+                    <th>Vehicle</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @if (schedules.Any())
+                {
+                    foreach (var schedule in schedules)
+                    {
+                        <tr>
+
+                            <td>
+                                @schedule.ScheduleDate.ToString("dd MMM yyyy")
+                            </td>
+
+                            <td>
+                                @schedule.DepartureTime.ToString(@"hh\:mm")
+                            </td>
+
+                            <td>
+                                @schedule.ArrivalTime.ToString(@"hh\:mm")
+                            </td>
+
+                            <td>
+                                @(schedule.Driver?.FullName ?? "Not assigned")
+                            </td>
+
+                            <td>
+                                @(schedule.Vehicle?.RegistrationNumber ?? "Not assigned")
+                            </td>
+
+                            <td>
+
+                                @if (schedule.Status == "Delayed")
+                                {
+                                    <span class="status-pill amber">
+                                        Delayed
+                                    </span>
+                                }
+                                else if (schedule.Status == "Cancelled")
+                                {
+                                    <span class="status-pill red">
+                                        Cancelled
+                                    </span>
+                                }
+                                else if (schedule.Status == "Completed")
+                                {
+                                    <span class="status-pill blue">
+                                        Completed
+                                    </span>
+                                }
+                                else if (schedule.Status == "Departed")
+                                {
+                                    <span class="status-pill purple">
+                                        Departed
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-pill green">
+                                        @schedule.Status
+                                    </span>
+                                }
+
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(schedule.Notes)
+                                    ? "-"
+                                    : schedule.Notes)
+                            </td>
+
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+
+                        <td colspan="7"
+                            class="text-center text-muted py-4">
+
+                            No schedules have been published for this route yet.
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+@section Scripts {
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const route = @Html.Raw(routeDataJson);
+
+            const geocodeCache = {};
+
+            function escapeHtml(value) {
+
+                if (value === null || value === undefined) {
+                    return "";
+                }
+
+                return String(value)
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll('"', "&quot;")
+                    .replaceAll("'", "&#039;");
+            }
+
+
+            async function geocodePlace(placeName) {
+
+                if (!placeName) {
+                    return null;
+                }
+
+                const cleanPlaceName = placeName.trim();
+
+                const key = cleanPlaceName
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+
+                if (geocodeCache[key]) {
+                    return geocodeCache[key];
+                }
+
+                const query = encodeURIComponent(
+                    cleanPlaceName + ", Sri Lanka"
+                );
+
+                const url =
+                    `https://nominatim.openstreetmap.org/search?format=json` +
+                    `&limit=5` +
+                    `&countrycodes=lk` +
+                    `&addressdetails=1` +
+                    `&q=${query}`;
+
+                try {
+
+                    const response = await fetch(url, {
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!data || data.length === 0) {
+                        return null;
+                    }
+
+                    const selectedResult = data[0];
+
+                    const point = {
+                        lat: parseFloat(selectedResult.lat),
+                        lng: parseFloat(selectedResult.lon),
+                        label: cleanPlaceName
+                    };
+
+                    geocodeCache[key] = point;
+
+                    return point;
+
+                } catch (error) {
+
+                    console.error(
+                        "Geocoding failed for:",
+                        cleanPlaceName,
+                        error
+                    );
+
+                    return null;
+                }
+            }
+
+
+            async function buildRouteCoordinates(route) {
+
+                const routePoints = [];
+
+                routePoints.push({
+                    placeName: route.startPoint,
+                    markerLabel: "S",
+                    markerType: "start",
+                    tooltipText:
+                        "Start Point: " + route.startPoint
+                });
+
+                if (route.stops && route.stops.length > 0) {
+
+                    route.stops.forEach(function (stop, index) {
+
+                        routePoints.push({
+                            placeName: stop.stopName,
+                            markerLabel: (index + 1).toString(),
+                            markerType: "stop",
+                            tooltipText:
+                                "Stop " +
+                                (index + 1) +
+                                ": " +
+                                stop.stopName
+                        });
+
+                    });
+                }
+
+                routePoints.push({
+                    placeName: route.endPoint,
+                    markerLabel: "E",
+                    markerType: "end",
+                    tooltipText:
+                        "End Point: " + route.endPoint
+                });
+
+                const coordinates = [];
+
+                const missingPoints = [];
+
+                for (const routePoint of routePoints) {
+
+                    const result = await geocodePlace(
+                        routePoint.placeName
+                    );
+
+                    if (result) {
+
+                        coordinates.push({
+                            lat: result.lat,
+                            lng: result.lng,
+                            markerLabel: routePoint.markerLabel,
+                            markerType: routePoint.markerType,
+                            tooltipText: routePoint.tooltipText
+                        });
+
+                    } else {
+
+                        missingPoints.push(
+                            routePoint.tooltipText
+                        );
+                    }
+                }
+
+                return {
+                    coordinates: coordinates,
+                    missingPoints: missingPoints
+                };
+            }
+
+
+            async function drawRouteLine(map, coordinates) {
+
+                if (coordinates.length < 2) {
+                    return;
+                }
+
+                const osrmCoordinates = coordinates
+                    .map(point =>
+                        `${point.lng},${point.lat}`
+                    )
+                    .join(";");
+
+                const osrmUrl =
+                    `https://router.project-osrm.org/route/v1/driving/` +
+                    `${osrmCoordinates}` +
+                    `?overview=full&geometries=geojson`;
+
+                try {
+
+                    const response = await fetch(osrmUrl);
+
+                    const data = await response.json();
+
+                    if (
+                        data.routes &&
+                        data.routes.length > 0
+                    ) {
+
+                        const routeGeoJson =
+                            data.routes[0].geometry;
+
+                        const routeLine = L.geoJSON(
+                            routeGeoJson,
+                            {
+                                style: {
+                                    weight: 5,
+                                    opacity: 0.9
+                                }
+                            }
+                        ).addTo(map);
+
+                        map.fitBounds(
+                            routeLine.getBounds(),
+                            {
+                                padding: [40, 40]
+                            }
+                        );
+
+                        return;
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Road route service failed:",
+                        error
+                    );
+                }
+
+                const fallbackLine = L.polyline(
+                    coordinates.map(
+                        point => [
+                            point.lat,
+                            point.lng
+                        ]
+                    ),
+                    {
+                        weight: 5,
+                        opacity: 0.9
+                    }
+                ).addTo(map);
+
+                map.fitBounds(
+                    fallbackLine.getBounds(),
+                    {
+                        padding: [40, 40]
+                    }
+                );
+            }
+
+
+            function createRouteMarkerIcon(
+                label,
+                markerType
+            ) {
+
+                return L.divIcon({
+
+                    className: "custom-route-marker",
+
+                    html:
+                        `<div class="route-marker ${markerType}">` +
+                        `${label}` +
+                        `</div>`,
+
+                    iconSize: [34, 34],
+
+                    iconAnchor: [17, 17],
+
+                    popupAnchor: [0, -18]
+
+                });
+            }
+
+
+            async function renderCustomerRouteMap() {
+
+                const mapElement =
+                    document.getElementById(
+                        "customerRouteMap"
+                    );
+
+                const missingArea =
+                    document.getElementById(
+                        "missingCustomerRoutePoints"
+                    );
+
+                if (!mapElement) {
+                    return;
+                }
+
+                const map = L.map(
+                    "customerRouteMap",
+                    {
+                        zoomControl: true
+                    }
+                );
+
+                L.tileLayer(
+                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    {
+                        maxZoom: 19,
+                        attribution: "© OpenStreetMap"
+                    }
+                ).addTo(map);
+
+                const routeCoordinateResult =
+                    await buildRouteCoordinates(route);
+
+                const coordinates =
+                    routeCoordinateResult.coordinates;
+
+                const missingPoints =
+                    routeCoordinateResult.missingPoints;
+
+                if (
+                    missingArea &&
+                    missingPoints.length > 0
+                ) {
+
+                    missingArea.innerHTML = `
+                        <div class="route-map-warning">
+                            Map service could not locate
+                            ${missingPoints.length}
+                            saved route point(s).
+                            Use simple real town names
+                            for highest accuracy.
+                        </div>
+                    `;
+                }
+
+                if (coordinates.length === 0) {
+
+                    mapElement.innerHTML = `
+                        <div class="map-error-message">
+                            Map location could not be found for this route.
+                            Please use real searchable place names such as
+                            Colombo, Kandy, Mathugama, Kegalle or Peradeniya.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                coordinates.forEach(function (point) {
+
+                    L.marker(
+                        [point.lat, point.lng],
+                        {
+                            icon: createRouteMarkerIcon(
+                                point.markerLabel,
+                                point.markerType
+                            )
+                        }
+                    )
+                    .addTo(map)
+                    .bindTooltip(
+                        escapeHtml(point.tooltipText),
+                        {
+                            permanent: true,
+                            direction: "top",
+                            offset: [0, -22],
+                            className:
+                                "route-marker-tooltip"
+                        }
+                    )
+                    .bindPopup(
+                        `<strong>` +
+                        `${escapeHtml(point.tooltipText)}` +
+                        `</strong>`
+                    );
+
+                });
+
+                await drawRouteLine(
+                    map,
+                    coordinates
+                );
+
+                const markerBounds = L.latLngBounds(
+                    coordinates.map(
+                        point => [
+                            point.lat,
+                            point.lng
+                        ]
+                    )
+                );
+
+                map.fitBounds(markerBounds, {
+                    paddingTopLeft: [80, 80],
+                    paddingBottomRight: [80, 80],
+                    maxZoom: 11
+                });
+
+                setTimeout(function () {
+                    map.invalidateSize();
+                }, 250);
+            }
+
+
+            renderCustomerRouteMap();
+
+        });
+
+    </script>
+}

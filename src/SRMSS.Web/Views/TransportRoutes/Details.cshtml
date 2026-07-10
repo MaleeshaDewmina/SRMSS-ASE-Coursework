@@ -1,0 +1,115 @@
+@model SRMSS.Web.Models.TransportRoute
+
+@{
+    ViewData["Title"] = "Route Details";
+    ViewData["PageTitle"] = "Route Details";
+    ViewData["PageSubtitle"] = "View route information, distance, service type and ordered stops.";
+}
+
+<div class="route-editor-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Route Information</h3>
+        <p class="card-subtitle">
+            Detailed information about the selected transport route.
+        </p>
+
+        <div class="details-list">
+            <div class="details-row">
+                <span>Route Name</span>
+                <strong>@Model.RouteName</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Start Point</span>
+                <strong>@Model.StartPoint</strong>
+            </div>
+
+            <div class="details-row">
+                <span>End Point</span>
+                <strong>@Model.EndPoint</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Distance</span>
+                <strong>@Model.DistanceKm km</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Estimated Duration</span>
+                <strong>@Model.EstimatedDurationMinutes mins</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Service Type</span>
+                <strong>@Model.ServiceType</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Status</span>
+                <strong>
+                    @if (Model.Status == "Active")
+                    {
+                        <span class="status-pill green">Active</span>
+                    }
+                    else
+                    {
+                        <span class="status-pill red">@Model.Status</span>
+                    }
+                </strong>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 flex-wrap mt-4">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="srmss-btn primary">
+                Edit Route
+            </a>
+
+            <a asp-action="Index" class="srmss-btn secondary">
+                Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="srmss-card amber">
+        <h3 class="card-title">Route Stop Flow</h3>
+        <p class="card-subtitle">
+            Ordered stops connected with this route.
+        </p>
+
+        <div class="stop-flow">
+            @if (Model.RouteStops != null && Model.RouteStops.Any())
+            {
+                foreach (var stop in Model.RouteStops.OrderBy(s => s.StopOrder))
+                {
+                    <div class="stop-flow-item">
+                        <div class="stop-dot @(stop.StopOrder == 1 ? "filled" : "")"></div>
+                        <div>
+                            <strong>@stop.StopOrder. @stop.StopName</strong>
+                            <small>@stop.EstimatedMinutesFromStart mins from start</small>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-stop-panel">
+                    <div class="empty-stop-icon">i</div>
+                    <h4>No stops added</h4>
+                    <p>This route does not have intermediary stops yet.</p>
+                </div>
+            }
+        </div>
+
+        <div class="route-detail-mini-summary mt-4">
+            <div>
+                <span>Total Stops</span>
+                <strong>@(Model.RouteStops?.Count ?? 0)</strong>
+            </div>
+
+            <div>
+                <span>Route Status</span>
+                <strong>@Model.Status</strong>
+            </div>
+        </div>
+    </div>
+</div>
