@@ -1,0 +1,91 @@
+@model SRMSS.Web.Models.TransportRoute
+
+@{
+    ViewData["Title"] = "Add Route";
+    ViewData["PageTitle"] = "Add / Edit Route";
+    ViewData["PageSubtitle"] = "Route creation screen with ordered stops and validation.";
+}
+
+<div class="route-editor-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Route Details</h3>
+        <p class="card-subtitle">Enter core route details before adding stops</p>
+
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="RouteName" class="form-label"></label>
+                <input asp-for="RouteName" class="form-control" placeholder="R-005 | Colombo - Kurunegala" />
+                <span asp-validation-for="RouteName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="StartPoint" class="form-label"></label>
+                <input asp-for="StartPoint" class="form-control" placeholder="Colombo Central" />
+                <span asp-validation-for="StartPoint" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EndPoint" class="form-label"></label>
+                <input asp-for="EndPoint" class="form-control" placeholder="Kurunegala Depot" />
+                <span asp-validation-for="EndPoint" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DistanceKm" class="form-label"></label>
+                <input asp-for="DistanceKm" class="form-control" placeholder="94.50" />
+                <span asp-validation-for="DistanceKm" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EstimatedDurationMinutes" class="form-label"></label>
+                <input asp-for="EstimatedDurationMinutes" class="form-control" placeholder="120" />
+                <span asp-validation-for="EstimatedDurationMinutes" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ServiceType" class="form-label"></label>
+                <select asp-for="ServiceType" class="form-select">
+                    <option value="Normal">Normal</option>
+                    <option value="Express">Express</option>
+                    <option value="Intercity">Intercity</option>
+                </select>
+                <span asp-validation-for="ServiceType" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" class="form-select">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex gap-3">
+                <button type="submit" class="srmss-btn primary">Save Route</button>
+                <a asp-action="Index" class="srmss-btn secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="srmss-card amber">
+        <h3 class="card-title">Route Stops</h3>
+        <p class="card-subtitle">Save the route first, then add ordered stops.</p>
+
+        <div class="empty-stop-panel">
+            <div class="empty-stop-icon">+</div>
+            <h4>No stops yet</h4>
+            <p>After saving this route, open Route Stops and add stops in order.</p>
+        </div>
+
+        <a asp-controller="RouteStops" asp-action="Create" class="srmss-btn light w-100 mt-4">
+            + Add Stop
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

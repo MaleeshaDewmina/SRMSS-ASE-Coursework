@@ -1,0 +1,356 @@
+@model IEnumerable<SRMSS.Web.Models.TransportRoute>
+
+@{
+    ViewData["Title"] = "Customer Route Search";
+    ViewData["PageTitle"] = "Customer Route Search";
+    ViewData["PageSubtitle"] = "Search public transport routes, stops, timetables and trip status.";
+
+    var fromValue = ViewBag.From as string;
+    var toValue = ViewBag.To as string;
+
+    var favoriteRouteIds = ViewBag.FavoriteRouteIds as HashSet<int> ?? new HashSet<int>();
+    var favoriteRoutes = ViewBag.FavoriteRoutes as List<SRMSS.Web.Models.FavoriteRoute> ?? new List<SRMSS.Web.Models.FavoriteRoute>();
+}
+
+<div class="customer-route-hero">
+    <div>
+        <span class="customer-portal-pill">Customer Portal</span>
+        <h2>Find Your Route</h2>
+        <p>
+            Search routes by start point, destination or intermediary stop. Customers can view route stops,
+            timetables and current trip status.
+        </p>
+    </div>
+
+    <div class="customer-route-hero-card">
+        <strong>@Model.Count()</strong>
+        <span>Matching Routes</span>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success srmss-alert">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-warning srmss-alert">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Search Public Routes</h3>
+    <p class="card-subtitle">
+        Example: From Colombo to Badulla, or from Ratnapura to Ella.
+    </p>
+
+    <form asp-controller="CustomerRoutes" asp-action="Index" method="get" class="customer-search-grid">
+        <div>
+            <label class="form-label">From</label>
+            <input name="from"
+                   value="@fromValue"
+                   class="form-control"
+                   placeholder="Example: Colombo" />
+        </div>
+
+        <div>
+            <label class="form-label">To</label>
+            <input name="to"
+                   value="@toValue"
+                   class="form-control"
+                   placeholder="Example: Badulla" />
+        </div>
+
+        <div class="customer-search-button-area">
+            <button type="submit" class="srmss-btn primary w-100">
+                Search Routes
+            </button>
+        </div>
+
+        <div class="customer-search-button-area">
+            <a asp-controller="CustomerRoutes" asp-action="Index" class="srmss-btn secondary w-100">
+                Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="customer-route-layout">
+    <div class="srmss-card">
+        <h3 class="card-title">Search Results</h3>
+        <p class="card-subtitle">
+            Active routes available for customer viewing.
+        </p>
+
+        @if (Model.Any())
+        {
+            <div class="customer-route-results">
+                @foreach (var route in Model)
+                {
+                    var orderedStops = route.RouteStops != null
+                        ? route.RouteStops.OrderBy(s => s.StopOrder).ToList()
+                        : new List<SRMSS.Web.Models.RouteStop>();
+
+                    var latestSchedule = route.Schedules != null
+                        ? route.Schedules.OrderBy(s => s.ScheduleDate).ThenBy(s => s.DepartureTime).FirstOrDefault()
+                        : null;
+
+                    var origin = System.Uri.EscapeDataString(route.StartPoint ?? "");
+                    var destination = System.Uri.EscapeDataString(route.EndPoint ?? "");
+                    var waypoints = string.Join("%7C", orderedStops.Select(s => System.Uri.EscapeDataString(s.StopName ?? "")));
+
+                    var mapUrl = "https://www.google.com/maps/dir/?api=1"
+                        + "&origin=" + origin
+                        + "&destination=" + destination
+                        + (string.IsNullOrWhiteSpace(waypoints) ? "" : "&waypoints=" + waypoints)
+                        + "&travelmode=driving";
+
+                    var isFavorite = favoriteRouteIds.Contains(route.Id);
+
+                    <div class="customer-route-card">
+                        <div class="customer-route-card-top">
+                            <div>
+                                <h4>@route.RouteName</h4>
+                                <p>@route.StartPoint → @route.EndPoint</p>
+                            </div>
+
+                            <span class="status-pill green">@route.Status</span>
+                        </div>
+
+                        <div class="customer-route-meta">
+                            <div>
+                                <span>Distance</span>
+                                <strong>@route.DistanceKm km</strong>
+                            </div>
+
+                            <div>
+                                <span>Duration</span>
+                                <strong>@route.EstimatedDurationMinutes mins</strong>
+                            </div>
+
+                            <div>
+                                <span>Type</span>
+                                <strong>@route.ServiceType</strong>
+                            </div>
+
+                            <div>
+                                <span>Stops</span>
+                                <strong>@orderedStops.Count</strong>
+                            </div>
+                        </div>
+
+                        <div class="customer-mini-flow">
+                            <span class="flow-start">@route.StartPoint</span>
+
+                            @foreach (var stop in orderedStops.Take(4))
+                            {
+                                <span class="flow-arrow">→</span>
+                                <span class="flow-stop">@stop.StopName</span>
+                            }
+
+                            @if (orderedStops.Count > 4)
+                            {
+                                <span class="flow-arrow">→</span>
+                                <span class="flow-more">+@(orderedStops.Count - 4) more</span>
+                            }
+
+                            <span class="flow-arrow">→</span>
+                            <span class="flow-end">@route.EndPoint</span>
+                        </div>
+
+                        <div class="customer-route-schedule-preview">
+                            @if (latestSchedule != null)
+                            {
+                                <span>Next timetable</span>
+                                <strong>
+                                    @latestSchedule.ScheduleDate.ToString("dd MMM yyyy")
+                                    |
+                                    @latestSchedule.DepartureTime.ToString(@"hh\:mm")
+                                    -
+                                    @latestSchedule.ArrivalTime.ToString(@"hh\:mm")
+                                </strong>
+
+                                @if (latestSchedule.Status == "Delayed")
+                                {
+                                    <span class="status-pill amber">Delayed</span>
+                                }
+                                else if (latestSchedule.Status == "Cancelled")
+                                {
+                                    <span class="status-pill red">Cancelled</span>
+                                }
+                                else if (latestSchedule.Status == "Completed")
+                                {
+                                    <span class="status-pill blue">Completed</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pill green">@latestSchedule.Status</span>
+                                }
+                            }
+                            else
+                            {
+                                <span>No timetable added yet</span>
+                            }
+                        </div>
+
+                        <div class="customer-route-actions">
+                            <a asp-controller="CustomerRoutes"
+                               asp-action="Details"
+                               asp-route-id="@route.Id"
+                               class="srmss-btn primary">
+                                View Details
+                            </a>
+
+                            <a href="@mapUrl"
+                               target="_blank"
+                               class="srmss-btn secondary">
+                                Open Map
+                            </a>
+
+                            @if (isFavorite)
+                            {
+                                <form asp-controller="CustomerRoutes"
+                                      asp-action="RemoveFavorite"
+                                      method="post"
+                                      class="favorite-inline-form">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="routeId" value="@route.Id" />
+                                    <input type="hidden" name="from" value="@fromValue" />
+                                    <input type="hidden" name="to" value="@toValue" />
+
+                                    <button type="submit" class="srmss-btn secondary favorite-route-btn favorite-active">
+                                        Saved
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-controller="CustomerRoutes"
+                                      asp-action="AddFavorite"
+                                      method="post"
+                                      class="favorite-inline-form">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="routeId" value="@route.Id" />
+                                    <input type="hidden" name="from" value="@fromValue" />
+                                    <input type="hidden" name="to" value="@toValue" />
+
+                                    <button type="submit" class="srmss-btn secondary favorite-route-btn">
+                                        Save Favorite
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="customer-empty-state">
+                <h4>No routes found</h4>
+                <p>Try searching with simple town names such as Colombo, Badulla, Ratnapura or Ella.</p>
+            </div>
+        }
+    </div>
+
+    <div class="srmss-card">
+        <h3 class="card-title">My Favorite Routes</h3>
+        <p class="card-subtitle">
+            Saved routes are stored in the database for quick customer access.
+        </p>
+
+        <div class="favorite-routes-list">
+            @if (favoriteRoutes.Any())
+            {
+                foreach (var favorite in favoriteRoutes)
+                {
+                    var favoriteRoute = favorite.TransportRoute;
+
+                    if (favoriteRoute != null)
+                    {
+                        <div class="favorite-route-item">
+                            <div>
+                                <strong>@favoriteRoute.RouteName</strong>
+                                <span>@favoriteRoute.StartPoint → @favoriteRoute.EndPoint</span>
+                                <small>Saved @favorite.SavedAt.ToString("dd MMM yyyy hh:mm tt")</small>
+                            </div>
+
+                            <div class="favorite-route-actions">
+                                <a asp-controller="CustomerRoutes"
+                                   asp-action="Details"
+                                   asp-route-id="@favoriteRoute.Id"
+                                   class="favorite-view-link">
+                                    View
+                                </a>
+
+                                <form asp-controller="CustomerRoutes"
+                                      asp-action="RemoveFavorite"
+                                      method="post"
+                                      class="favorite-remove-form">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="routeId" value="@favoriteRoute.Id" />
+                                    <input type="hidden" name="from" value="@fromValue" />
+                                    <input type="hidden" name="to" value="@toValue" />
+
+                                    <button type="submit" class="favorite-remove-btn">
+                                        Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+            else
+            {
+                <div class="customer-empty-state small">
+                    No favorite routes saved yet.
+                </div>
+            }
+        </div>
+
+        <hr class="my-4" />
+
+        <h3 class="card-title">Customer Help</h3>
+        <p class="card-subtitle">
+            How customers can use this page.
+        </p>
+
+        <div class="customer-help-list">
+            <div>
+                <span>1</span>
+                <p>Enter your starting location in the From field.</p>
+            </div>
+
+            <div>
+                <span>2</span>
+                <p>Enter your destination or stop in the To field.</p>
+            </div>
+
+            <div>
+                <span>3</span>
+                <p>Open route details to view stops, timetable and trip status.</p>
+            </div>
+
+            <div>
+                <span>4</span>
+                <p>Use the map button to view the full journey direction.</p>
+            </div>
+
+            <div>
+                <span>5</span>
+                <p>Save favorite routes for quick access.</p>
+            </div>
+        </div>
+    </div>
+</div>

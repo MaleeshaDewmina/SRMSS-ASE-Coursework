@@ -1,49 +1,121 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+    string IsActive(string controller)
+    {
+        return currentController == controller ? "active" : "";
+    }
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SRMSS.Web</title>
+    <title>@ViewData["Title"] - SRMSS</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SRMSS.Web.styles.css" asp-append-version="true" />
 </head>
+
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SRMSS.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+    <div class="srmss-shell">
+        <aside class="srmss-sidebar">
+            <div class="brand-box">
+                <div class="brand-logo">S</div>
+                <div>
+                    <h1>SRMSS</h1>
+                    <p>Depot Control</p>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
+
+            <div class="sidebar-line"></div>
+
+            <nav class="side-nav">
+                <a class="side-link @IsActive("Home")" asp-controller="Home" asp-action="Index">
+                    <span>D</span> Dashboard
+                </a>
+
+                <a class="side-link @IsActive("TransportRoutes")" asp-controller="TransportRoutes" asp-action="Index">
+                    <span>R</span> Routes
+                </a>
+
+                <a class="side-link @IsActive("RouteStops")" asp-controller="RouteStops" asp-action="Index">
+                    <span>St</span> Route Stops
+                </a>
+
+                <a class="side-link @IsActive("Schedules")" asp-controller="Schedules" asp-action="Index">
+                    <span>S</span> Schedules
+                </a>
+
+                <a class="side-link @IsActive("CustomerRoutes")" asp-controller="CustomerRoutes" asp-action="Index">
+                    <span>C</span> Customer Routes
+                </a>
+
+                <a class="side-link @IsActive("TripStatus")" asp-controller="TripStatus" asp-action="Index">
+                    <span>T</span> Trip Status
+                </a>
+
+                <a class="side-link" href="#">
+                    <span>Dr</span> Drivers
+                </a>
+
+                <a class="side-link" href="#">
+                    <span>V</span> Vehicles
+                </a>
+
+                <a class="side-link" href="#">
+                    <span>F</span> Fuel Logs
+                </a>
+
+                <a class="side-link" href="#">
+                    <span>M</span> Maintenance
+                </a>
+
+                <a class="side-link" href="#">
+                    <span>P</span> Reports
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">D</div>
+                <div>
+                    <strong>Denuwan</strong>
+                    <small>Route Manager</small>
+                </div>
+            </div>
+        </aside>
+
+        <main class="srmss-main">
+            <header class="topbar">
+                <div>
+                    <h2>@ViewData["PageTitle"]</h2>
+                    <p>@ViewData["PageSubtitle"]</p>
+                </div>
+
+                <div class="topbar-actions">
+                    <input class="top-search" placeholder="Search route, bus, driver..." />
+                    <div class="top-icon warning">!</div>
+                    <div class="top-icon info">?</div>
+                    <div class="admin-chip">
+                        <div class="admin-avatar">D</div>
+                        <div>
+                            <strong>Admin</strong>
+                            <small>Depot HQ</small>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="page-content">
+                @RenderBody()
+            </section>
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SRMSS.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

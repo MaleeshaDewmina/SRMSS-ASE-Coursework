@@ -1,0 +1,205 @@
+@model SRMSS.Web.Models.Schedule
+
+@{
+    ViewData["Title"] = "Create Schedule";
+    ViewData["PageTitle"] = "Create Schedule";
+    ViewData["PageSubtitle"] = "Assign routes, drivers and vehicles with conflict detection.";
+
+    var selectedRepeatType = ViewBag.RepeatType as string ?? "Once";
+    var selectedRepeatCount = ViewBag.RepeatCount ?? 1;
+}
+
+<div class="schedule-create-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Schedule Form</h3>
+        <p class="card-subtitle">
+            Create a single schedule or repeat it daily, weekly, or monthly.
+        </p>
+
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="TransportRouteId" class="form-label">Route</label>
+                <select asp-for="TransportRouteId" class="form-select" asp-items="ViewBag.TransportRouteId">
+                    <option value="">-- Select Route --</option>
+                </select>
+                <span asp-validation-for="TransportRouteId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="VehicleId" class="form-label">Vehicle</label>
+                <select asp-for="VehicleId" class="form-select" asp-items="ViewBag.VehicleId">
+                    <option value="">-- Select Vehicle --</option>
+                </select>
+                <span asp-validation-for="VehicleId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DriverId" class="form-label">Driver</label>
+                <select asp-for="DriverId" class="form-select" asp-items="ViewBag.DriverId">
+                    <option value="">-- Select Driver --</option>
+                </select>
+                <span asp-validation-for="DriverId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ScheduleDate" class="form-label">Start Date</label>
+                <input asp-for="ScheduleDate" type="date" class="form-control" />
+                <span asp-validation-for="ScheduleDate" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="DepartureTime" class="form-label">Departure Time</label>
+                    <input asp-for="DepartureTime" type="time" class="form-control" />
+                    <span asp-validation-for="DepartureTime" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ArrivalTime" class="form-label">Arrival Time</label>
+                    <input asp-for="ArrivalTime" type="time" class="form-control" />
+                    <span asp-validation-for="ArrivalTime" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="schedule-repeat-box">
+                <h4>Timetable Repeat Options</h4>
+                <p>Create daily, weekly, or monthly schedule records from one form.</p>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Repeat Type</label>
+                        <select name="repeatType" id="repeatType" class="form-select">
+                            <option value="Once" selected="@(selectedRepeatType == "Once")">Once</option>
+                            <option value="Daily" selected="@(selectedRepeatType == "Daily")">Daily</option>
+                            <option value="Weekly" selected="@(selectedRepeatType == "Weekly")">Weekly</option>
+                            <option value="Monthly" selected="@(selectedRepeatType == "Monthly")">Monthly</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Repeat Count</label>
+                        <input name="repeatCount"
+                               id="repeatCount"
+                               type="number"
+                               min="1"
+                               max="31"
+                               value="@selectedRepeatCount"
+                               class="form-control" />
+                    </div>
+                </div>
+
+                <div class="repeat-preview-text" id="repeatPreviewText">
+                    This will create 1 schedule.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label">Trip Status</label>
+                <select asp-for="Status" class="form-select">
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="On Time">On Time</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Notes" class="form-label">Notes</label>
+                <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Optional schedule notes"></textarea>
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex gap-3 flex-wrap">
+                <button type="submit" class="srmss-btn primary">
+                    Create Schedule
+                </button>
+
+                <a asp-action="Index" class="srmss-btn secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="srmss-card amber">
+        <h3 class="card-title">Smart Scheduling</h3>
+        <p class="card-subtitle">
+            The system validates schedule conflicts before saving.
+        </p>
+
+        <div class="validation-success-panel">
+            <h3>Conflict Detection Active</h3>
+            <p>
+                The system checks driver conflicts, vehicle conflicts, duplicate route departure times and invalid arrival times.
+            </p>
+        </div>
+
+        <div class="smart-note">
+            <h4>Repeat Schedule Support</h4>
+            <p>
+                Use repeat options to create daily, weekly or monthly timetables quickly.
+            </p>
+        </div>
+
+        <div class="route-detail-mini-summary mt-4">
+            <div>
+                <span>Daily</span>
+                <strong>Supported</strong>
+            </div>
+
+            <div>
+                <span>Weekly</span>
+                <strong>Supported</strong>
+            </div>
+        </div>
+
+        <div class="route-detail-mini-summary mt-3">
+            <div>
+                <span>Monthly</span>
+                <strong>Supported</strong>
+            </div>
+
+            <div>
+                <span>Max Bulk</span>
+                <strong>31</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const repeatType = document.getElementById("repeatType");
+            const repeatCount = document.getElementById("repeatCount");
+            const repeatPreviewText = document.getElementById("repeatPreviewText");
+
+            function updateRepeatPreview() {
+                const type = repeatType.value;
+                const count = parseInt(repeatCount.value || "1");
+
+                if (type === "Once") {
+                    repeatCount.value = 1;
+                    repeatCount.setAttribute("readonly", "readonly");
+                    repeatPreviewText.textContent = "This will create 1 schedule.";
+                } else {
+                    repeatCount.removeAttribute("readonly");
+                    repeatPreviewText.textContent = `This will create ${count} ${type.toLowerCase()} schedule records.`;
+                }
+            }
+
+            repeatType.addEventListener("change", updateRepeatPreview);
+            repeatCount.addEventListener("input", updateRepeatPreview);
+
+            updateRepeatPreview();
+        });
+    </script>
+}

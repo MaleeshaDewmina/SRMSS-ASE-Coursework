@@ -1,0 +1,85 @@
+@model SRMSS.Web.Models.RouteStop
+
+@{
+    ViewData["Title"] = "Route Stop Details";
+    ViewData["PageTitle"] = "Route Stop Details";
+    ViewData["PageSubtitle"] = "View selected stop information and route flow details.";
+}
+
+<div class="route-editor-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Stop Information</h3>
+        <p class="card-subtitle">
+            Detailed information about this route stop.
+        </p>
+
+        <div class="details-list">
+            <div class="details-row">
+                <span>Route</span>
+                <strong>@(Model.TransportRoute?.RouteName ?? "Unknown Route")</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Stop Name</span>
+                <strong>@Model.StopName</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Stop Order</span>
+                <strong>@Model.StopOrder</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Estimated Minutes From Start</span>
+                <strong>@Model.EstimatedMinutesFromStart mins</strong>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 flex-wrap mt-4">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="srmss-btn primary">
+                Edit Stop
+            </a>
+
+            <a asp-action="Index" class="srmss-btn secondary">
+                Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="srmss-card amber">
+        <h3 class="card-title">Route Flow Preview</h3>
+        <p class="card-subtitle">
+            This stop is part of the selected route sequence.
+        </p>
+
+        <div class="detailed-stop-flow">
+            <div class="detailed-stop-item active">
+                <div class="detailed-stop-dot">@Model.StopOrder</div>
+                <div class="detailed-stop-content">
+                    <strong>@Model.StopName</strong>
+                    <small>@Model.EstimatedMinutesFromStart mins from start</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="route-detail-mini-summary mt-4">
+            <div>
+                <span>Route</span>
+                <strong>@(Model.TransportRoute?.RouteName ?? "N/A")</strong>
+            </div>
+
+            <div>
+                <span>Status</span>
+                <strong>Recorded</strong>
+            </div>
+        </div>
+
+        <div class="empty-stop-panel mt-4">
+            <div class="empty-stop-icon">✓</div>
+            <h4>Stop Saved</h4>
+            <p>
+                This stop is available for route planning and schedule understanding.
+            </p>
+        </div>
+    </div>
+</div>
