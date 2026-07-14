@@ -1,35 +1,43 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SRMSS.Web.Data;
+using SRMSS.Web.Filters;
 using SRMSS.Web.Models;
+using SRMSS.Web.Services;
+using SRMSS.Web.Utilities;
 
 namespace SRMSS.Web.Controllers
 {
+    [RoleAuthorize("Customer")]
     public class CustomerRoutesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
-        public CustomerRoutesController(ApplicationDbContext context)
+        public CustomerRoutesController(
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         private string GetCustomerKey()
         {
-            if (User.Identity != null &&
-                User.Identity.IsAuthenticated &&
-                !string.IsNullOrWhiteSpace(User.Identity.Name))
+            int? userId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+
+            if (userId.HasValue)
             {
-                return User.Identity.Name;
+                return $"CUSTOMER:{userId.Value}";
             }
 
-            return "DEMO_CUSTOMER";
+            string username = HttpContext.Session.GetString(SessionKeys.Username) ?? "UNKNOWN";
+            return $"CUSTOMER:{username}";
         }
 
-        // GET: CustomerRoutes
         public async Task<IActionResult> Index(string? from, string? to)
         {
-            var customerKey = GetCustomerKey();
+            string customerKey = GetCustomerKey();
 
             var routesQuery = _context.TransportRoutes
                 .Include(r => r.RouteStops)
@@ -43,18 +51,22 @@ namespace SRMSS.Web.Controllers
 
             if (!string.IsNullOrWhiteSpace(from))
             {
+                string cleanFrom = from.Trim();
+
                 routesQuery = routesQuery.Where(r =>
-                    r.StartPoint.Contains(from) ||
-                    r.RouteName.Contains(from) ||
-                    r.RouteStops.Any(s => s.StopName.Contains(from)));
+                    r.StartPoint.Contains(cleanFrom) ||
+                    r.RouteName.Contains(cleanFrom) ||
+                    r.RouteStops.Any(s => s.StopName.Contains(cleanFrom)));
             }
 
             if (!string.IsNullOrWhiteSpace(to))
             {
+                string cleanTo = to.Trim();
+
                 routesQuery = routesQuery.Where(r =>
-                    r.EndPoint.Contains(to) ||
-                    r.RouteName.Contains(to) ||
-                    r.RouteStops.Any(s => s.StopName.Contains(to)));
+                    r.EndPoint.Contains(cleanTo) ||
+                    r.RouteName.Contains(cleanTo) ||
+                    r.RouteStops.Any(s => s.StopName.Contains(cleanTo)));
             }
 
             var routes = await routesQuery
@@ -79,7 +91,6 @@ namespace SRMSS.Web.Controllers
             return View(routes);
         }
 
-        // GET: CustomerRoutes/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -87,7 +98,7 @@ namespace SRMSS.Web.Controllers
                 return NotFound();
             }
 
-            var customerKey = GetCustomerKey();
+            string customerKey = GetCustomerKey();
 
             var route = await _context.TransportRoutes
                 .Include(r => r.RouteStops)
@@ -105,17 +116,14 @@ namespace SRMSS.Web.Controllers
                 return NotFound();
             }
 
-            var isFavorite = await _context.FavoriteRoutes
+            ViewBag.IsFavorite = await _context.FavoriteRoutes
                 .AnyAsync(f =>
                     f.CustomerKey == customerKey &&
                     f.TransportRouteId == route.Id);
 
-            ViewBag.IsFavorite = isFavorite;
-
             return View(route);
         }
 
-        // POST: CustomerRoutes/AddFavorite
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddFavorite(
@@ -124,69 +132,51 @@ namespace SRMSS.Web.Controllers
             string? to,
             bool returnToDetails = false)
         {
-            var customerKey = GetCustomerKey();
+            string customerKey = GetCustomerKey();
 
-            var routeExists = await _context.TransportRoutes
-                .AnyAsync(r =>
+            var route = await _context.TransportRoutes
+                .FirstOrDefaultAsync(r =>
                     r.Id == routeId &&
                     r.Status == "Active");
 
-            if (!routeExists)
+            if (route == null)
             {
                 TempData["ErrorMessage"] = "Route could not be found.";
-
-                if (returnToDetails)
-                {
-                    return RedirectToAction(
-                        nameof(Details),
-                        new { id = routeId });
-                }
-
-                return RedirectToAction(
-                    nameof(Index),
-                    new { from, to });
+                return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
             }
 
-            var alreadySaved = await _context.FavoriteRoutes
+            bool alreadySaved = await _context.FavoriteRoutes
                 .AnyAsync(f =>
                     f.CustomerKey == customerKey &&
                     f.TransportRouteId == routeId);
 
-            if (!alreadySaved)
+            if (alreadySaved)
             {
-                var favoriteRoute = new FavoriteRoute
-                {
-                    CustomerKey = customerKey,
-                    TransportRouteId = routeId,
-                    SavedAt = DateTime.Now
-                };
-
-                _context.FavoriteRoutes.Add(favoriteRoute);
-
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] =
-                    "Route saved to favorites successfully.";
-            }
-            else
-            {
-                TempData["ErrorMessage"] =
-                    "This route is already saved in favorites.";
+                TempData["ErrorMessage"] = "This route is already saved in favorites.";
+                return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
             }
 
-            if (returnToDetails)
+            var favoriteRoute = new FavoriteRoute
             {
-                return RedirectToAction(
-                    nameof(Details),
-                    new { id = routeId });
-            }
+                CustomerKey = customerKey,
+                TransportRouteId = routeId,
+                SavedAt = DateTime.Now
+            };
 
-            return RedirectToAction(
-                nameof(Index),
-                new { from, to });
+            _context.FavoriteRoutes.Add(favoriteRoute);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                "Add Favorite Route",
+                "FavoriteRoutes",
+                favoriteRoute.Id,
+                $"Saved route {route.RouteName} to customer favorites"
+            );
+
+            TempData["SuccessMessage"] = "Route saved to favorites successfully.";
+            return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
         }
 
-        // POST: CustomerRoutes/RemoveFavorite
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveFavorite(
@@ -195,38 +185,48 @@ namespace SRMSS.Web.Controllers
             string? to,
             bool returnToDetails = false)
         {
-            var customerKey = GetCustomerKey();
+            string customerKey = GetCustomerKey();
 
             var favoriteRoute = await _context.FavoriteRoutes
+                .Include(f => f.TransportRoute)
                 .FirstOrDefaultAsync(f =>
                     f.CustomerKey == customerKey &&
                     f.TransportRouteId == routeId);
 
-            if (favoriteRoute != null)
+            if (favoriteRoute == null)
             {
-                _context.FavoriteRoutes.Remove(favoriteRoute);
-
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] =
-                    "Route removed from favorites successfully.";
-            }
-            else
-            {
-                TempData["ErrorMessage"] =
-                    "This route is not currently saved in favorites.";
+                TempData["ErrorMessage"] = "This route is not currently saved in favorites.";
+                return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
             }
 
+            string routeName = favoriteRoute.TransportRoute?.RouteName ?? $"Route #{routeId}";
+
+            _context.FavoriteRoutes.Remove(favoriteRoute);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                "Remove Favorite Route",
+                "FavoriteRoutes",
+                favoriteRoute.Id,
+                $"Removed {routeName} from customer favorites"
+            );
+
+            TempData["SuccessMessage"] = "Route removed from favorites successfully.";
+            return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
+        }
+
+        private IActionResult RedirectAfterFavoriteAction(
+            int routeId,
+            string? from,
+            string? to,
+            bool returnToDetails)
+        {
             if (returnToDetails)
             {
-                return RedirectToAction(
-                    nameof(Details),
-                    new { id = routeId });
+                return RedirectToAction(nameof(Details), new { id = routeId });
             }
 
-            return RedirectToAction(
-                nameof(Index),
-                new { from, to });
+            return RedirectToAction(nameof(Index), new { from, to });
         }
     }
 }

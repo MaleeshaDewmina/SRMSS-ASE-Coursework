@@ -24,7 +24,7 @@ namespace SRMSS.Web.Models
 
         [Required]
         [MaxLength(50)]
-        public string Role { get; set; } = "OperationsStaff";
+        public string Role { get; set; } = "User";
 
         public bool IsActive { get; set; } = true;
 

@@ -35,8 +35,8 @@ namespace SRMSS.Web.Controllers
                     a.TableName.Contains(search) ||
                     a.Description.Contains(search) ||
                     (a.AppUser != null && (
-                        a.AppUser.FullName.Contains(search) ||
-                        a.AppUser.Username.Contains(search)
+                        a.AppUser!.FullName.Contains(search) ||
+                        a.AppUser!.Username.Contains(search)
                     ))
                 );
             }

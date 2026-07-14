@@ -8,7 +8,7 @@ namespace SRMSS.Web.Models
 
         [Required]
         [StringLength(100)]
-        public string CustomerKey { get; set; } = "DEMO_CUSTOMER";
+        public string CustomerKey { get; set; } = string.Empty;
 
         public int TransportRouteId { get; set; }
 

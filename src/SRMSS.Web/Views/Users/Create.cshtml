@@ -114,6 +114,7 @@
         <div class="subtitle">Create a new SRMSS account with role based access.</div>
 
         <form asp-action="Create" asp-controller="Users" method="post">
+            <div asp-validation-summary="ModelOnly" class="validation mb-3"></div>
             @Html.AntiForgeryToken()
 
             <label asp-for="FullName">Full Name</label>

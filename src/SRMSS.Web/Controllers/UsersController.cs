@@ -71,14 +71,13 @@ namespace SRMSS.Web.Controllers
         {
             string currentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
 
-            if (currentRole == "Admin" && model.Role == "Admin")
-            {
-                ModelState.AddModelError("Role", "Admin cannot create another Admin account.");
-            }
+            string[] allowedRoles = currentRole == "SuperAdmin"
+                ? new[] { "Admin", "User", "Customer" }
+                : new[] { "User", "Customer" };
 
-            if (currentRole == "Admin" && model.Role == "SuperAdmin")
+            if (!allowedRoles.Contains(model.Role))
             {
-                ModelState.AddModelError("Role", "Admin cannot create SuperAdmin account.");
+                ModelState.AddModelError("Role", "You are not allowed to create an account with the selected role.");
             }
 
             if (string.IsNullOrWhiteSpace(model.Password))
@@ -172,6 +171,7 @@ namespace SRMSS.Web.Controllers
         public async Task<IActionResult> Edit(UserFormViewModel model)
         {
             string currentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
+            int? currentUserId = HttpContext.Session.GetInt32(SessionKeys.UserId);
 
             var user = await _context.AppUsers.FindAsync(model.Id);
 
@@ -192,9 +192,26 @@ namespace SRMSS.Web.Controllers
                 return RedirectToAction("AccessDenied", "Account");
             }
 
-            if (currentRole == "Admin" && (model.Role == "Admin" || model.Role == "SuperAdmin"))
+            string[] editableRoles = currentRole == "SuperAdmin"
+                ? new[] { "SuperAdmin", "Admin", "User", "Customer" }
+                : new[] { "User", "Customer" };
+
+            if (!editableRoles.Contains(model.Role))
             {
-                ModelState.AddModelError("Role", "Admin cannot assign Admin or SuperAdmin role.");
+                ModelState.AddModelError("Role", "You are not allowed to assign the selected role.");
+            }
+
+            if (currentUserId == user.Id)
+            {
+                if (!model.IsActive)
+                {
+                    ModelState.AddModelError("IsActive", "You cannot deactivate your own account.");
+                }
+
+                if (model.Role != user.Role)
+                {
+                    ModelState.AddModelError("Role", "You cannot change your own role.");
+                }
             }
 
             bool usernameExists = await _context.AppUsers
@@ -255,6 +272,7 @@ namespace SRMSS.Web.Controllers
         public async Task<IActionResult> ToggleStatus(int id)
         {
             string currentRole = HttpContext.Session.GetString(SessionKeys.Role) ?? "";
+            int? currentUserId = HttpContext.Session.GetInt32(SessionKeys.UserId);
 
             var user = await _context.AppUsers.FindAsync(id);
 
@@ -273,6 +291,12 @@ namespace SRMSS.Web.Controllers
                 );
 
                 return RedirectToAction("AccessDenied", "Account");
+            }
+
+            if (currentUserId == user.Id)
+            {
+                TempData["Error"] = "You cannot deactivate your own account.";
+                return RedirectToAction(nameof(Index));
             }
 
             user.IsActive = !user.IsActive;

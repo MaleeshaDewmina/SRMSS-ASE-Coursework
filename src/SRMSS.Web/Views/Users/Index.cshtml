@@ -203,6 +203,11 @@
         <div class="success-message">@TempData["Success"]</div>
     }
 
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
     <div class="create-row">
         <a href="/Dashboard" class="btn btn-secondary">Back to Dashboard</a>
         <a href="/Users/Create" class="btn btn-primary">Create User</a>

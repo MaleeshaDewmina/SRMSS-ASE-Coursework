@@ -7,6 +7,8 @@
 
     var selectedStatus = ViewBag.SelectedStatus as string ?? "All";
     var searchValue = ViewBag.Search as string;
+    var currentRole = Context.Session.GetString(SessionKeys.Role) ?? string.Empty;
+    var canUpdateStatus = currentRole == "SuperAdmin" || currentRole == "Admin";
 }
 
 <div class="trip-status-hero">
@@ -14,7 +16,14 @@
         <span class="trip-status-pill">Live Operations</span>
         <h2>Trip Status Board</h2>
         <p>
-            Monitor route schedules, update current trip status and identify delayed or cancelled trips quickly.
+            @if (canUpdateStatus)
+            {
+                <text>Monitor route schedules, update current trip status and identify delayed or cancelled trips quickly.</text>
+            }
+            else
+            {
+                <text>Monitor route schedules and identify delayed, departed, completed or cancelled trips.</text>
+            }
         </p>
     </div>
 
@@ -40,6 +49,11 @@
     <div class="trip-status-metric-card">
         <span>Scheduled</span>
         <strong>@ViewBag.ScheduledTrips</strong>
+    </div>
+
+    <div class="trip-status-metric-card success">
+        <span>On Time</span>
+        <strong>@ViewBag.OnTimeTrips</strong>
     </div>
 
     <div class="trip-status-metric-card">
@@ -83,6 +97,7 @@
             <select name="status" class="form-control">
                 <option value="All" selected="@(selectedStatus == "All")">All</option>
                 <option value="Scheduled" selected="@(selectedStatus == "Scheduled")">Scheduled</option>
+                <option value="On Time" selected="@(selectedStatus == "On Time")">On Time</option>
                 <option value="Departed" selected="@(selectedStatus == "Departed")">Departed</option>
                 <option value="Delayed" selected="@(selectedStatus == "Delayed")">Delayed</option>
                 <option value="Completed" selected="@(selectedStatus == "Completed")">Completed</option>
@@ -107,7 +122,7 @@
 <div class="srmss-card">
     <h3 class="card-title">Trip Status List</h3>
     <p class="card-subtitle">
-        Update trip status directly from the operation board.
+        @(canUpdateStatus ? "Update trip status directly from the operation board." : "View current operational trip status in real time.")
     </p>
 
     <div class="table-responsive">
@@ -120,7 +135,10 @@
                     <th>Driver</th>
                     <th>Vehicle</th>
                     <th>Current Status</th>
-                    <th>Update Status</th>
+                    @if (canUpdateStatus)
+                    {
+                        <th>Update Status</th>
+                    }
                 </tr>
             </thead>
 
@@ -172,36 +190,40 @@
                                 }
                             </td>
 
-                            <td>
-                                <form asp-controller="TripStatus"
-                                      asp-action="UpdateStatus"
-                                      method="post"
-                                      class="trip-status-update-form">
+                            @if (canUpdateStatus)
+                            {
+                                <td>
+                                    <form asp-controller="TripStatus"
+                                          asp-action="UpdateStatus"
+                                          method="post"
+                                          class="trip-status-update-form">
 
-                                    @Html.AntiForgeryToken()
+                                        @Html.AntiForgeryToken()
 
-                                    <input type="hidden" name="id" value="@schedule.Id" />
+                                        <input type="hidden" name="id" value="@schedule.Id" />
 
-                                    <select name="status" class="form-control form-control-sm">
-                                        <option value="Scheduled" selected="@(schedule.Status == "Scheduled")">Scheduled</option>
-                                        <option value="Departed" selected="@(schedule.Status == "Departed")">Departed</option>
-                                        <option value="Delayed" selected="@(schedule.Status == "Delayed")">Delayed</option>
-                                        <option value="Completed" selected="@(schedule.Status == "Completed")">Completed</option>
-                                        <option value="Cancelled" selected="@(schedule.Status == "Cancelled")">Cancelled</option>
-                                    </select>
+                                        <select name="status" class="form-control form-control-sm">
+                                            <option value="Scheduled" selected="@(schedule.Status == "Scheduled")">Scheduled</option>
+                                            <option value="On Time" selected="@(schedule.Status == "On Time")">On Time</option>
+                                            <option value="Departed" selected="@(schedule.Status == "Departed")">Departed</option>
+                                            <option value="Delayed" selected="@(schedule.Status == "Delayed")">Delayed</option>
+                                            <option value="Completed" selected="@(schedule.Status == "Completed")">Completed</option>
+                                            <option value="Cancelled" selected="@(schedule.Status == "Cancelled")">Cancelled</option>
+                                        </select>
 
-                                    <button type="submit" class="srmss-btn primary small-btn">
-                                        Update
-                                    </button>
-                                </form>
-                            </td>
+                                        <button type="submit" class="srmss-btn primary small-btn">
+                                            Update
+                                        </button>
+                                    </form>
+                                </td>
+                            }
                         </tr>
                     }
                 }
                 else
                 {
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="@(canUpdateStatus ? 7 : 6)" class="text-center text-muted py-4">
                             No trips found for the selected filter.
                         </td>
                     </tr>

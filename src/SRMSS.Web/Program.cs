@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SRMSS.Web.Data;
 using SRMSS.Web.Models;
-using SRMSS.Web.Utilities;
 using SRMSS.Web.Services;
+using SRMSS.Web.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +16,7 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 builder.Services.AddHttpContextAccessor();
@@ -41,8 +42,6 @@ using (var scope = app.Services.CreateScope())
             IsActive = true,
             CreatedAt = DateTime.Now
         });
-
-        context.SaveChanges();
     }
 
     if (!context.AppUsers.Any(u => u.Username == "admin"))
@@ -57,8 +56,6 @@ using (var scope = app.Services.CreateScope())
             IsActive = true,
             CreatedAt = DateTime.Now
         });
-
-        context.SaveChanges();
     }
 
     if (!context.AppUsers.Any(u => u.Username == "user"))
@@ -73,8 +70,6 @@ using (var scope = app.Services.CreateScope())
             IsActive = true,
             CreatedAt = DateTime.Now
         });
-
-        context.SaveChanges();
     }
 
     if (!context.AppUsers.Any(u => u.Username == "customer"))
@@ -89,26 +84,27 @@ using (var scope = app.Services.CreateScope())
             IsActive = true,
             CreatedAt = DateTime.Now
         });
-
-        context.SaveChanges();
     }
+
+    await context.SaveChangesAsync();
 }
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseSession();
-
 app.UseAuthorization();
 
+// Map attribute-routed controllers such as /Dashboard, /Users and /AuditLogs.
+app.MapControllers();
+
+// Keep conventional MVC routing for the remaining controllers.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");

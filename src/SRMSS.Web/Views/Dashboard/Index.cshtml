@@ -2,220 +2,167 @@
 
 @{
     ViewData["Title"] = "Dashboard";
+    ViewData["PageTitle"] = "Dashboard";
+    ViewData["PageSubtitle"] = $"Live SRMSS overview for {Model.Role}";
 }
 
 <style>
-    body {
-        background: #f4f8fc;
+    .dashboard-content {
+        width: 100%;
     }
 
-    .dashboard-shell {
-        display: grid;
-        grid-template-columns: 280px minmax(0, 1fr);
-        min-height: calc(100vh - 20px);
-        gap: 24px;
-        padding: 24px;
-    }
-
-    .sidebar {
-        background: #06111f;
+    .dashboard-welcome {
+        background: linear-gradient(135deg, #06111f, #0f2f5f);
         color: white;
-        border-radius: 28px;
-        padding: 26px 20px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .brand {
-        font-size: 30px;
-        font-weight: 900;
-        margin-bottom: 6px;
-    }
-
-    .brand-sub {
-        color: #93c5fd;
-        font-size: 13px;
-        margin-bottom: 28px;
-    }
-
-    .nav-link-custom {
-        display: block;
-        color: #cbd5e1;
-        text-decoration: none;
-        padding: 13px 15px;
-        border-radius: 14px;
-        margin-bottom: 8px;
-        font-weight: 700;
-        transition: 0.2s ease;
-    }
-
-    .nav-link-custom:hover,
-    .nav-link-custom.active {
-        background: #2563eb;
-        color: white;
-    }
-
-    .logout {
-        display: block;
-        margin-top: auto;
-        padding: 13px 15px;
-        border-radius: 14px;
-        background: #ef4444;
-        color: white;
-        text-decoration: none;
-        font-weight: 800;
-        text-align: center;
-    }
-
-    .logout:hover {
-        background: #dc2626;
-        color: white;
-    }
-
-    .main {
-        min-width: 0;
-    }
-
-    .top-card {
-        background: white;
-        border-radius: 28px;
+        border-radius: 26px;
         padding: 28px;
-        border: 1px solid #d8e6f3;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
         margin-bottom: 24px;
         display: flex;
         justify-content: space-between;
-        gap: 20px;
         align-items: center;
+        gap: 20px;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
     }
 
-    .top-card h1 {
+    .dashboard-welcome h1 {
         margin: 0 0 8px;
-        color: #06111f;
         font-size: 32px;
         font-weight: 900;
     }
 
-    .top-card p {
-        color: #64748b;
+    .dashboard-welcome p {
         margin: 0;
+        color: #cbd5e1;
     }
 
     .role-badge {
         display: inline-block;
         padding: 10px 14px;
         border-radius: 999px;
-        background: #dbeafe;
-        color: #1d4ed8;
+        background: rgba(255, 255, 255, 0.12);
+        color: #dbeafe;
+        border: 1px solid rgba(147, 197, 253, 0.35);
         font-weight: 900;
         white-space: nowrap;
     }
 
-    .kpi-grid {
+    .dashboard-kpi-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 18px;
         margin-bottom: 24px;
     }
 
-    .kpi-card {
+    .dashboard-kpi-card {
         background: white;
-        border-radius: 24px;
+        border-radius: 22px;
         padding: 22px;
         border: 1px solid #d8e6f3;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
         position: relative;
         overflow: hidden;
     }
 
-    .kpi-card::before {
+    .dashboard-kpi-card::before {
         content: "";
         position: absolute;
         top: 0;
         left: 0;
         width: 5px;
         height: 100%;
-        background: #2563eb;
+        background: #1e3a8a;
     }
 
-    .kpi-title {
+    .dashboard-kpi-title {
         color: #64748b;
         font-weight: 800;
         font-size: 14px;
     }
 
-    .kpi-value {
+    .dashboard-kpi-value {
         color: #06111f;
         font-size: 36px;
         font-weight: 900;
         margin-top: 8px;
     }
 
-    .section-card {
+    .dashboard-section {
         background: white;
         border-radius: 24px;
         padding: 24px;
         border: 1px solid #d8e6f3;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
         margin-bottom: 24px;
     }
 
-    .section-header {
+    .dashboard-section-header {
         display: flex;
         justify-content: space-between;
-        gap: 15px;
         align-items: center;
+        gap: 15px;
         margin-bottom: 18px;
     }
 
-    .section-header h2 {
+    .dashboard-section-header h2 {
         margin: 0;
         color: #06111f;
         font-size: 22px;
         font-weight: 900;
     }
 
-    .section-header a {
-        color: #2563eb;
+    .dashboard-section-header a {
+        color: #1d4ed8;
         text-decoration: none;
         font-weight: 800;
     }
 
-    .module-grid {
+    .dashboard-module-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 18px;
     }
 
-    .module-card {
+    .dashboard-module-link {
+        display: block;
         background: #f8fafc;
         border-radius: 20px;
         padding: 22px;
         border: 1px solid #d8e6f3;
         min-height: 150px;
+        color: inherit;
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
-    .module-card h3 {
+    .dashboard-module-link:hover {
+        transform: translateY(-3px);
+        border-color: #93c5fd;
+        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.09);
+        color: inherit;
+    }
+
+    .dashboard-module-link h3 {
         margin: 0 0 10px;
         color: #06111f;
         font-size: 18px;
+        font-weight: 900;
     }
 
-    .module-card p {
+    .dashboard-module-link p {
         color: #64748b;
         line-height: 1.6;
         margin: 0;
     }
 
-    .activity-list {
+    .dashboard-activity-list {
         display: flex;
         flex-direction: column;
         gap: 12px;
     }
 
-    .activity-item {
+    .dashboard-activity-item {
         display: grid;
-        grid-template-columns: 160px 150px 1fr;
+        grid-template-columns: 170px 150px 1fr;
         gap: 15px;
         align-items: center;
         padding: 14px 16px;
@@ -224,27 +171,27 @@
         border-radius: 16px;
     }
 
-    .activity-action {
+    .dashboard-activity-action {
         font-weight: 900;
         color: #1d4ed8;
     }
 
-    .activity-user {
+    .dashboard-activity-user {
         color: #334155;
         font-weight: 700;
     }
 
-    .activity-description {
+    .dashboard-activity-description {
         color: #64748b;
     }
 
-    .activity-time {
+    .dashboard-activity-time {
         color: #94a3b8;
         font-size: 12px;
         margin-top: 4px;
     }
 
-    .empty-state {
+    .dashboard-empty-state {
         padding: 24px;
         text-align: center;
         color: #64748b;
@@ -253,399 +200,185 @@
     }
 
     @@media (max-width: 1100px) {
-        .kpi-grid {
+        .dashboard-kpi-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .module-grid {
+        .dashboard-module-grid {
             grid-template-columns: 1fr;
         }
     }
 
-    @@media (max-width: 850px) {
-        .dashboard-shell {
-            grid-template-columns: 1fr;
-            padding: 14px;
-        }
-
-        .sidebar {
-            min-height: auto;
-        }
-
-        .logout {
-            margin-top: 20px;
-        }
-
-        .top-card {
+    @@media (max-width: 700px) {
+        .dashboard-welcome {
             flex-direction: column;
             align-items: flex-start;
         }
 
-        .activity-item {
+        .dashboard-activity-item {
             grid-template-columns: 1fr;
             gap: 6px;
         }
     }
 
     @@media (max-width: 520px) {
-        .kpi-grid {
+        .dashboard-kpi-grid {
             grid-template-columns: 1fr;
         }
     }
 </style>
 
-<div class="dashboard-shell">
+<div class="dashboard-content">
+    <section class="dashboard-welcome">
+        <div>
+            <h1>Welcome, @Model.FullName</h1>
+            <p>
+                Signed in as <strong>@Model.Username</strong>. Your dashboard shows live information from the SRMSS database.
+            </p>
+        </div>
+        <span class="role-badge">@Model.Role Dashboard</span>
+    </section>
 
-    <aside class="sidebar">
-
-        <div class="brand">SRMSS</div>
-        <div class="brand-sub">Smart Route Management System</div>
-
-        <a class="nav-link-custom active" href="/Dashboard">Dashboard</a>
-
-        <a class="nav-link-custom" href="/Account/Profile">My Profile</a>
-
-        @if (Model.Role == "SuperAdmin")
-        {
-            <a class="nav-link-custom" href="/Users?roleFilter=Admin">Manage Admins</a>
-            <a class="nav-link-custom" href="/Users?roleFilter=User">Manage Users</a>
-            <a class="nav-link-custom" href="/Users?roleFilter=Customer">Manage Customers</a>
-            <a class="nav-link-custom" href="/AuditLogs">Audit Logs</a>
-        }
-        else if (Model.Role == "Admin")
-        {
-            <a class="nav-link-custom" href="/Users">Manage Users</a>
-            <a class="nav-link-custom" href="#">Routes</a>
-            <a class="nav-link-custom" href="#">Schedules</a>
-            <a class="nav-link-custom" href="#">Drivers</a>
-            <a class="nav-link-custom" href="#">Vehicles</a>
-            <a class="nav-link-custom" href="#">Reports</a>
-        }
-        else if (Model.Role == "User")
-        {
-            <a class="nav-link-custom" href="#">My Trips</a>
-            <a class="nav-link-custom" href="#">Assigned Routes</a>
-            <a class="nav-link-custom" href="#">Fuel Logs</a>
-            <a class="nav-link-custom" href="#">Report Maintenance</a>
-        }
-        else if (Model.Role == "Customer")
-        {
-            <a class="nav-link-custom" href="#">Search Routes</a>
-            <a class="nav-link-custom" href="#">Timetables</a>
-            <a class="nav-link-custom" href="#">Favorite Routes</a>
-            <a class="nav-link-custom" href="#">Feedback</a>
-        }
-
-        <a class="logout" href="/Account/Logout">Logout</a>
-
-    </aside>
-
-    <main class="main">
-
-        <section class="top-card">
-
-            <div>
-                <h1>Welcome, @Model.FullName</h1>
-                <p>
-                    Signed in as <strong>@Model.Username</strong>.
-                    Your dashboard shows live information from the SRMSS database.
-                </p>
-            </div>
-
-            <span class="role-badge">@Model.Role Dashboard</span>
-
+    @if (Model.Role == "SuperAdmin")
+    {
+        <section class="dashboard-kpi-grid">
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Total Admins</div><div class="dashboard-kpi-value">@Model.TotalAdmins</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Total Users</div><div class="dashboard-kpi-value">@Model.TotalUsers</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Total Customers</div><div class="dashboard-kpi-value">@Model.TotalCustomers</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Audit Logs</div><div class="dashboard-kpi-value">@Model.TotalAuditLogs</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Active Accounts</div><div class="dashboard-kpi-value">@Model.ActiveAccounts</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Inactive Accounts</div><div class="dashboard-kpi-value">@Model.InactiveAccounts</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Routes</div><div class="dashboard-kpi-value">@Model.TotalRoutes</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Schedules</div><div class="dashboard-kpi-value">@Model.TotalSchedules</div></div>
         </section>
 
-        @if (Model.Role == "SuperAdmin")
-        {
-            <section class="kpi-grid">
+        <section class="dashboard-section">
+            <div class="dashboard-section-header">
+                <h2>Operations Quick Access</h2>
+            </div>
+            <div class="dashboard-module-grid">
+                <a asp-controller="TransportRoutes" asp-action="Index" class="dashboard-module-link">
+                    <h3>Route Management</h3>
+                    <p>Manage transport routes, route details and service information.</p>
+                </a>
+                <a asp-controller="Schedules" asp-action="Index" class="dashboard-module-link">
+                    <h3>Schedule Management</h3>
+                    <p>Manage schedules, assignments, repeated services and conflict detection.</p>
+                </a>
+                <a asp-controller="TripStatus" asp-action="Index" class="dashboard-module-link">
+                    <h3>Trip Status Board</h3>
+                    <p>Monitor scheduled, departed, delayed, completed and cancelled trips.</p>
+                </a>
+            </div>
+        </section>
 
-                <div class="kpi-card">
-                    <div class="kpi-title">Total Admins</div>
-                    <div class="kpi-value">@Model.TotalAdmins</div>
-                </div>
+        <section class="dashboard-section">
+            <div class="dashboard-section-header">
+                <h2>Recent System Activity</h2>
+                <a asp-controller="AuditLogs" asp-action="Index">View All Logs</a>
+            </div>
 
-                <div class="kpi-card">
-                    <div class="kpi-title">Total Users</div>
-                    <div class="kpi-value">@Model.TotalUsers</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Total Customers</div>
-                    <div class="kpi-value">@Model.TotalCustomers</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Audit Logs</div>
-                    <div class="kpi-value">@Model.TotalAuditLogs</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Active Accounts</div>
-                    <div class="kpi-value">@Model.ActiveAccounts</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Inactive Accounts</div>
-                    <div class="kpi-value">@Model.InactiveAccounts</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Routes</div>
-                    <div class="kpi-value">@Model.TotalRoutes</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Schedules</div>
-                    <div class="kpi-value">@Model.TotalSchedules</div>
-                </div>
-
-            </section>
-
-            <section class="section-card">
-
-                <div class="section-header">
-                    <h2>Recent System Activity</h2>
-                    <a href="/AuditLogs">View All Logs</a>
-                </div>
-
-                @if (Model.RecentAuditLogs.Any())
-                {
-                    <div class="activity-list">
-
-                        @foreach (var log in Model.RecentAuditLogs)
-                        {
-                            <div class="activity-item">
-
-                                <div>
-                                    <div class="activity-action">@log.Action</div>
-                                    <div class="activity-time">
-                                        @log.CreatedAt.ToString("yyyy-MM-dd hh:mm tt")
-                                    </div>
-                                </div>
-
-                                <div class="activity-user">
-                                    @(log.AppUser != null
-                                        ? log.AppUser.Username
-                                        : "System")
-                                </div>
-
-                                <div class="activity-description">
-                                    @log.Description
-                                </div>
-
+            @if (Model.RecentAuditLogs.Any())
+            {
+                <div class="dashboard-activity-list">
+                    @foreach (var log in Model.RecentAuditLogs)
+                    {
+                        <div class="dashboard-activity-item">
+                            <div>
+                                <div class="dashboard-activity-action">@log.Action</div>
+                                <div class="dashboard-activity-time">@log.CreatedAt.ToString("yyyy-MM-dd hh:mm tt")</div>
                             </div>
-                        }
-
-                    </div>
-                }
-                else
-                {
-                    <div class="empty-state">
-                        No recent system activity available.
-                    </div>
-                }
-
-            </section>
-        }
-        else if (Model.Role == "Admin")
-        {
-            <section class="kpi-grid">
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Routes</div>
-                    <div class="kpi-value">@Model.TotalRoutes</div>
+                            <div class="dashboard-activity-user">@(log.AppUser?.Username ?? "System")</div>
+                            <div class="dashboard-activity-description">@log.Description</div>
+                        </div>
+                    }
                 </div>
+            }
+            else
+            {
+                <div class="dashboard-empty-state">No recent system activity available.</div>
+            }
+        </section>
+    }
+    else if (Model.Role == "Admin")
+    {
+        <section class="dashboard-kpi-grid">
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Routes</div><div class="dashboard-kpi-value">@Model.TotalRoutes</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Schedules</div><div class="dashboard-kpi-value">@Model.TotalSchedules</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Drivers</div><div class="dashboard-kpi-value">@Model.TotalDrivers</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Vehicles</div><div class="dashboard-kpi-value">@Model.TotalVehicles</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Active Trips</div><div class="dashboard-kpi-value">@Model.ActiveTrips</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Delayed Trips</div><div class="dashboard-kpi-value">@Model.DelayedTrips</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Completed Trips</div><div class="dashboard-kpi-value">@Model.CompletedTrips</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Customers</div><div class="dashboard-kpi-value">@Model.TotalCustomers</div></div>
+        </section>
 
-                <div class="kpi-card">
-                    <div class="kpi-title">Schedules</div>
-                    <div class="kpi-value">@Model.TotalSchedules</div>
-                </div>
+        <section class="dashboard-section">
+            <div class="dashboard-section-header"><h2>Depot Management</h2></div>
+            <div class="dashboard-module-grid">
+                <a asp-controller="TransportRoutes" asp-action="Index" class="dashboard-module-link">
+                    <h3>Route Management</h3>
+                    <p>Manage public transport routes, route stops and service information.</p>
+                </a>
+                <a asp-controller="Schedules" asp-action="Index" class="dashboard-module-link">
+                    <h3>Schedule Management</h3>
+                    <p>Manage route schedules, assignments, conflict detection and repeated services.</p>
+                </a>
+                <a asp-controller="TripStatus" asp-action="Index" class="dashboard-module-link">
+                    <h3>Trip Status Board</h3>
+                    <p>Monitor live trip progress and update operational status.</p>
+                </a>
+            </div>
+        </section>
+    }
+    else if (Model.Role == "User")
+    {
+        <section class="dashboard-kpi-grid">
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Total Schedules</div><div class="dashboard-kpi-value">@Model.TotalSchedules</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Active Trips</div><div class="dashboard-kpi-value">@Model.ActiveTrips</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Delayed Trips</div><div class="dashboard-kpi-value">@Model.DelayedTrips</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Completed Trips</div><div class="dashboard-kpi-value">@Model.CompletedTrips</div></div>
+        </section>
 
-                <div class="kpi-card">
-                    <div class="kpi-title">Drivers</div>
-                    <div class="kpi-value">@Model.TotalDrivers</div>
-                </div>
+        <section class="dashboard-section">
+            <div class="dashboard-section-header"><h2>Operations</h2></div>
+            <div class="dashboard-module-grid">
+                <a asp-controller="TripStatus" asp-action="Index" class="dashboard-module-link">
+                    <h3>View Trip Status</h3>
+                    <p>Monitor scheduled, departed, delayed, completed and cancelled trips.</p>
+                </a>
+                <a asp-controller="Account" asp-action="Profile" class="dashboard-module-link">
+                    <h3>My Profile</h3>
+                    <p>View and update your SRMSS account details securely.</p>
+                </a>
+            </div>
+        </section>
+    }
+    else if (Model.Role == "Customer")
+    {
+        <section class="dashboard-kpi-grid">
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Available Routes</div><div class="dashboard-kpi-value">@Model.AvailableRoutes</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Available Schedules</div><div class="dashboard-kpi-value">@Model.AvailableSchedules</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Active Trips</div><div class="dashboard-kpi-value">@Model.ActiveTrips</div></div>
+            <div class="dashboard-kpi-card"><div class="dashboard-kpi-title">Favorite Routes</div><div class="dashboard-kpi-value">@Model.FavoriteRoutes</div></div>
+        </section>
 
-                <div class="kpi-card">
-                    <div class="kpi-title">Vehicles</div>
-                    <div class="kpi-value">@Model.TotalVehicles</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Active Trips</div>
-                    <div class="kpi-value">@Model.ActiveTrips</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Delayed Trips</div>
-                    <div class="kpi-value">@Model.DelayedTrips</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Completed Trips</div>
-                    <div class="kpi-value">@Model.CompletedTrips</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Customers</div>
-                    <div class="kpi-value">@Model.TotalCustomers</div>
-                </div>
-
-            </section>
-
-            <section class="section-card">
-
-                <div class="section-header">
-                    <h2>Depot Management</h2>
-                </div>
-
-                <div class="module-grid">
-
-                    <div class="module-card">
-                        <h3>Route Management</h3>
-                        <p>
-                            Manage public transport routes, route stops and service information.
-                        </p>
-                    </div>
-
-                    <div class="module-card">
-                        <h3>Schedule Management</h3>
-                        <p>
-                            Manage route schedules, assignments, conflict detection and trip status.
-                        </p>
-                    </div>
-
-                    <div class="module-card">
-                        <h3>Fleet Management</h3>
-                        <p>
-                            Manage drivers, vehicles, fuel usage and vehicle maintenance information.
-                        </p>
-                    </div>
-
-                </div>
-
-            </section>
-        }
-        else if (Model.Role == "User")
-        {
-            <section class="kpi-grid">
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Total Schedules</div>
-                    <div class="kpi-value">@Model.TotalSchedules</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Active Trips</div>
-                    <div class="kpi-value">@Model.ActiveTrips</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Delayed Trips</div>
-                    <div class="kpi-value">@Model.DelayedTrips</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Completed Trips</div>
-                    <div class="kpi-value">@Model.CompletedTrips</div>
-                </div>
-
-            </section>
-
-            <section class="section-card">
-
-                <div class="section-header">
-                    <h2>Operations</h2>
-                </div>
-
-                <div class="module-grid">
-
-                    <div class="module-card">
-                        <h3>Assigned Trips</h3>
-                        <p>
-                            View assigned schedules and transport operations.
-                        </p>
-                    </div>
-
-                    <div class="module-card">
-                        <h3>Fuel Logs</h3>
-                        <p>
-                            Record fuel consumption for assigned vehicle operations.
-                        </p>
-                    </div>
-
-                    <div class="module-card">
-                        <h3>Maintenance Reports</h3>
-                        <p>
-                            Report vehicle issues and maintenance requirements.
-                        </p>
-                    </div>
-
-                </div>
-
-            </section>
-        }
-        else if (Model.Role == "Customer")
-        {
-            <section class="kpi-grid">
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Available Routes</div>
-                    <div class="kpi-value">@Model.TotalRoutes</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Available Schedules</div>
-                    <div class="kpi-value">@Model.TotalSchedules</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Active Trips</div>
-                    <div class="kpi-value">@Model.ActiveTrips</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-title">Delayed Trips</div>
-                    <div class="kpi-value">@Model.DelayedTrips</div>
-                </div>
-
-            </section>
-
-            <section class="section-card">
-
-                <div class="section-header">
-                    <h2>Customer Portal</h2>
-                </div>
-
-                <div class="module-grid">
-
-                    <div class="module-card">
-                        <h3>Search Routes</h3>
-                        <p>
-                            Search public transport routes by starting point and destination.
-                        </p>
-                    </div>
-
-                    <div class="module-card">
-                        <h3>View Timetables</h3>
-                        <p>
-                            Check route schedules, departure times and current trip status.
-                        </p>
-                    </div>
-
-                    <div class="module-card">
-                        <h3>Favorite Routes</h3>
-                        <p>
-                            Save frequently used routes for faster future access.
-                        </p>
-                    </div>
-
-                </div>
-
-            </section>
-        }
-
-    </main>
-
+        <section class="dashboard-section">
+            <div class="dashboard-section-header"><h2>Customer Portal</h2></div>
+            <div class="dashboard-module-grid">
+                <a asp-controller="CustomerRoutes" asp-action="Index" class="dashboard-module-link">
+                    <h3>Search Routes</h3>
+                    <p>Search public transport routes by starting point and destination.</p>
+                </a>
+                <a asp-controller="CustomerRoutes" asp-action="Index" class="dashboard-module-link">
+                    <h3>View Timetables</h3>
+                    <p>Check route schedules, departure times and current trip status.</p>
+                </a>
+                <a href="/CustomerRoutes#favorites" class="dashboard-module-link">
+                    <h3>Favorite Routes</h3>
+                    <p>Open your saved routes for faster future access.</p>
+                </a>
+            </div>
+        </section>
+    }
 </div>

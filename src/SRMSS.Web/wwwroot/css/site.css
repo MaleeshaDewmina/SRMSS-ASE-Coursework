@@ -4585,3 +4585,74 @@ a {
         margin-top: 12px;
     }
 }
+/* =========================
+   Integrated navigation fixes
+========================= */
+.srmss-sidebar {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.side-nav {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+    padding-bottom: 8px;
+}
+
+.side-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.side-nav::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+}
+
+.side-link.logout-link {
+    margin-top: 8px;
+    color: #fecaca;
+}
+
+.side-link.logout-link:hover {
+    background: #7f1d1d;
+    color: #ffffff;
+}
+
+.sidebar-user {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    margin-top: 18px;
+    flex-shrink: 0;
+}
+
+.sidebar-user-copy {
+    min-width: 0;
+}
+
+.sidebar-user-copy strong,
+.sidebar-user-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 145px;
+}
+
+@media (max-width: 900px) {
+    .srmss-sidebar {
+        overflow: visible;
+    }
+
+    .side-nav {
+        overflow: visible;
+        padding-right: 0;
+    }
+}
+
+.trip-status-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}

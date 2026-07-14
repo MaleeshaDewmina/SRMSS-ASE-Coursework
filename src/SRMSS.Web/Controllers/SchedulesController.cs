@@ -2,26 +2,34 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SRMSS.Web.Data;
+using SRMSS.Web.Filters;
 using SRMSS.Web.Models;
+using SRMSS.Web.Services;
 
 namespace SRMSS.Web.Controllers
 {
+    [RoleAuthorize("SuperAdmin", "Admin")]
     public class SchedulesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
         private static readonly string[] AllowedStatuses =
         {
             "Scheduled",
             "On Time",
+            "Departed",
             "Delayed",
             "Completed",
             "Cancelled"
         };
 
-        public SchedulesController(ApplicationDbContext context)
+        public SchedulesController(
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         // GET: Schedules
@@ -120,6 +128,14 @@ namespace SRMSS.Web.Controllers
                 _context.Schedules.AddRange(schedulesToCreate);
                 await _context.SaveChangesAsync();
 
+                await _auditLogService.LogAsync(
+                    "Create Schedule",
+                    "Schedules",
+                    schedulesToCreate.FirstOrDefault()?.Id,
+                    $"Created {schedulesToCreate.Count} schedule(s) for route #{schedule.TransportRouteId}"
+                );
+
+                TempData["SuccessMessage"] = $"{schedulesToCreate.Count} schedule(s) created successfully.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -189,6 +205,14 @@ namespace SRMSS.Web.Controllers
                     throw;
                 }
 
+                await _auditLogService.LogAsync(
+                    "Update Schedule",
+                    "Schedules",
+                    schedule.Id,
+                    $"Updated schedule #{schedule.Id} for route #{schedule.TransportRouteId}"
+                );
+
+                TempData["SuccessMessage"] = "Schedule updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -225,12 +249,22 @@ namespace SRMSS.Web.Controllers
         {
             var schedule = await _context.Schedules.FindAsync(id);
 
-            if (schedule != null)
+            if (schedule == null)
             {
-                _context.Schedules.Remove(schedule);
-                await _context.SaveChangesAsync();
+                return NotFound();
             }
 
+            _context.Schedules.Remove(schedule);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                "Delete Schedule",
+                "Schedules",
+                id,
+                $"Deleted schedule #{id}"
+            );
+
+            TempData["SuccessMessage"] = "Schedule deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -251,9 +285,18 @@ namespace SRMSS.Web.Controllers
                 return BadRequest("Invalid schedule status.");
             }
 
+            string previousStatus = schedule.Status;
             schedule.Status = status;
             await _context.SaveChangesAsync();
 
+            await _auditLogService.LogAsync(
+                "Update Trip Status",
+                "Schedules",
+                schedule.Id,
+                $"Changed schedule #{schedule.Id} status from {previousStatus} to {status}"
+            );
+
+            TempData["SuccessMessage"] = "Schedule status updated successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -294,6 +337,14 @@ namespace SRMSS.Web.Controllers
 
             await _context.SaveChangesAsync();
 
+            await _auditLogService.LogAsync(
+                "Emergency Schedule Adjustment",
+                "Schedules",
+                schedule.Id,
+                $"Emergency adjustment on schedule #{schedule.Id}. Status: {status}. Reason: {cleanNote}"
+            );
+
+            TempData["SuccessMessage"] = "Emergency schedule adjustment saved successfully.";
             return RedirectToAction(nameof(Index));
         }
 

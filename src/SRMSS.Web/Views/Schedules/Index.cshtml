@@ -36,6 +36,16 @@
     );
 }
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success srmss-alert">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger srmss-alert">@TempData["ErrorMessage"]</div>
+}
+
 <form id="globalAntiForgeryForm" class="d-none">
     @Html.AntiForgeryToken()
 </form>
@@ -105,6 +115,7 @@
                 <option value="">All Status</option>
                 <option value="scheduled">Scheduled</option>
                 <option value="on time">On Time</option>
+                <option value="departed">Departed</option>
                 <option value="delayed">Delayed</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
@@ -175,6 +186,10 @@
                                     {
                                         <span class="status-pill green">On Time</span>
                                     }
+                                    else if (schedule.Status == "Departed")
+                                    {
+                                        <span class="status-pill purple">Departed</span>
+                                    }
                                     else if (schedule.Status == "Delayed")
                                     {
                                         <span class="status-pill amber">Delayed</span>
@@ -201,6 +216,7 @@
                                         <select name="status" class="form-select form-select-sm">
                                             <option value="Scheduled" selected="@(schedule.Status == "Scheduled")">Scheduled</option>
                                             <option value="On Time" selected="@(schedule.Status == "On Time")">On Time</option>
+                                            <option value="Departed" selected="@(schedule.Status == "Departed")">Departed</option>
                                             <option value="Delayed" selected="@(schedule.Status == "Delayed")">Delayed</option>
                                             <option value="Completed" selected="@(schedule.Status == "Completed")">Completed</option>
                                             <option value="Cancelled" selected="@(schedule.Status == "Cancelled")">Cancelled</option>
@@ -298,7 +314,7 @@
             }
 
             function buildStatusOptions(selectedStatus) {
-                const statuses = ["Scheduled", "On Time", "Delayed", "Completed", "Cancelled"];
+                const statuses = ["Scheduled", "On Time", "Departed", "Delayed", "Completed", "Cancelled"];
 
                 return statuses.map(function (status) {
                     const selected = status === selectedStatus ? "selected" : "";
@@ -359,6 +375,8 @@
 
                 if (schedule.status === "On Time" || schedule.status === "Completed") {
                     statusClass = "green";
+                } else if (schedule.status === "Departed") {
+                    statusClass = "purple";
                 } else if (schedule.status === "Delayed") {
                     statusClass = "amber";
                 } else if (schedule.status === "Cancelled") {

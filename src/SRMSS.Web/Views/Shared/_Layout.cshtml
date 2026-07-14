@@ -1,11 +1,22 @@
-﻿@{
-    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var roleFilter = Context.Request.Query["roleFilter"].ToString();
 
-    string IsActive(string controller)
-    {
-        return currentController == controller ? "active" : "";
-    }
+    var role = Context.Session.GetString(SessionKeys.Role) ?? string.Empty;
+    var fullName = Context.Session.GetString(SessionKeys.FullName) ?? "User";
+    var username = Context.Session.GetString(SessionKeys.Username) ?? string.Empty;
+
+    var pageTitle = ViewData["PageTitle"]?.ToString()
+        ?? ViewData["Title"]?.ToString()
+        ?? "SRMSS";
+
+    var pageSubtitle = ViewData["PageSubtitle"]?.ToString()
+        ?? $"Signed in as {role}";
+
+    var initial = string.IsNullOrWhiteSpace(fullName)
+        ? "U"
+        : fullName.Trim().Substring(0, 1).ToUpperInvariant();
 }
 
 <!DOCTYPE html>
@@ -18,7 +29,6 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-
 <body>
     <div class="srmss-shell">
         <aside class="srmss-sidebar">
@@ -26,63 +36,111 @@
                 <div class="brand-logo">S</div>
                 <div>
                     <h1>SRMSS</h1>
-                    <p>Depot Control</p>
+                    <p>Smart Route Management</p>
                 </div>
             </div>
 
             <div class="sidebar-line"></div>
 
             <nav class="side-nav">
-                <a class="side-link @IsActive("Home")" asp-controller="Home" asp-action="Index">
+                <a class="side-link @(string.Equals(currentController, "Dashboard", StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                   asp-controller="Dashboard"
+                   asp-action="Index">
                     <span>D</span> Dashboard
                 </a>
 
-                <a class="side-link @IsActive("TransportRoutes")" asp-controller="TransportRoutes" asp-action="Index">
-                    <span>R</span> Routes
+                <a class="side-link @(string.Equals(currentController, "Account", StringComparison.OrdinalIgnoreCase) && (currentAction == "Profile" || currentAction == "ChangePassword") ? "active" : "")"
+                   asp-controller="Account"
+                   asp-action="Profile">
+                    <span>P</span> My Profile
                 </a>
 
-                <a class="side-link @IsActive("RouteStops")" asp-controller="RouteStops" asp-action="Index">
-                    <span>St</span> Route Stops
-                </a>
+                @if (role == "SuperAdmin")
+                {
+                    <a class="side-link @(string.Equals(currentController, "Users", StringComparison.OrdinalIgnoreCase) && roleFilter == "Admin" ? "active" : "")"
+                       href="/Users?roleFilter=Admin">
+                        <span>A</span> Manage Admins
+                    </a>
 
-                <a class="side-link @IsActive("Schedules")" asp-controller="Schedules" asp-action="Index">
-                    <span>S</span> Schedules
-                </a>
+                    <a class="side-link @(string.Equals(currentController, "Users", StringComparison.OrdinalIgnoreCase) && (roleFilter == "User" || string.IsNullOrEmpty(roleFilter)) ? "active" : "")"
+                       href="/Users?roleFilter=User">
+                        <span>U</span> Manage Users
+                    </a>
 
-                <a class="side-link @IsActive("CustomerRoutes")" asp-controller="CustomerRoutes" asp-action="Index">
-                    <span>C</span> Customer Routes
-                </a>
+                    <a class="side-link @(string.Equals(currentController, "Users", StringComparison.OrdinalIgnoreCase) && roleFilter == "Customer" ? "active" : "")"
+                       href="/Users?roleFilter=Customer">
+                        <span>C</span> Manage Customers
+                    </a>
+                }
+                else if (role == "Admin")
+                {
+                    <a class="side-link @(string.Equals(currentController, "Users", StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                       asp-controller="Users"
+                       asp-action="Index">
+                        <span>U</span> Manage Users
+                    </a>
+                }
 
-                <a class="side-link @IsActive("TripStatus")" asp-controller="TripStatus" asp-action="Index">
-                    <span>T</span> Trip Status
-                </a>
+                @if (role == "SuperAdmin" || role == "Admin")
+                {
+                    <a class="side-link @(string.Equals(currentController, "TransportRoutes", StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                       asp-controller="TransportRoutes"
+                       asp-action="Index">
+                        <span>R</span> Routes
+                    </a>
 
-                <a class="side-link" href="#">
-                    <span>Dr</span> Drivers
-                </a>
+                    <a class="side-link @(string.Equals(currentController, "RouteStops", StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                       asp-controller="RouteStops"
+                       asp-action="Index">
+                        <span>St</span> Route Stops
+                    </a>
 
-                <a class="side-link" href="#">
-                    <span>V</span> Vehicles
-                </a>
+                    <a class="side-link @(string.Equals(currentController, "Schedules", StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                       asp-controller="Schedules"
+                       asp-action="Index">
+                        <span>S</span> Schedules
+                    </a>
+                }
 
-                <a class="side-link" href="#">
-                    <span>F</span> Fuel Logs
-                </a>
+                @if (role == "SuperAdmin" || role == "Admin" || role == "User")
+                {
+                    <a class="side-link @(string.Equals(currentController, "TripStatus", StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                       asp-controller="TripStatus"
+                       asp-action="Index">
+                        <span>T</span> Trip Status
+                    </a>
+                }
 
-                <a class="side-link" href="#">
-                    <span>M</span> Maintenance
-                </a>
+                @if (role == "Customer")
+                {
+                    <a class="side-link @(string.Equals(currentController, "CustomerRoutes", StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                       asp-controller="CustomerRoutes"
+                       asp-action="Index">
+                        <span>C</span> Search Routes
+                    </a>
+                }
 
-                <a class="side-link" href="#">
-                    <span>P</span> Reports
+                @if (role == "SuperAdmin")
+                {
+                    <a class="side-link @(string.Equals(currentController, "AuditLogs", StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                       asp-controller="AuditLogs"
+                       asp-action="Index">
+                        <span>L</span> Audit Logs
+                    </a>
+                }
+
+                <a class="side-link logout-link"
+                   asp-controller="Account"
+                   asp-action="Logout">
+                    <span>Q</span> Logout
                 </a>
             </nav>
 
             <div class="sidebar-user">
-                <div class="user-avatar">D</div>
-                <div>
-                    <strong>Denuwan</strong>
-                    <small>Route Manager</small>
+                <div class="user-avatar">@initial</div>
+                <div class="sidebar-user-copy">
+                    <strong>@fullName</strong>
+                    <small>@role</small>
                 </div>
             </div>
         </aside>
@@ -90,19 +148,16 @@
         <main class="srmss-main">
             <header class="topbar">
                 <div>
-                    <h2>@ViewData["PageTitle"]</h2>
-                    <p>@ViewData["PageSubtitle"]</p>
+                    <h2>@pageTitle</h2>
+                    <p>@pageSubtitle</p>
                 </div>
 
                 <div class="topbar-actions">
-                    <input class="top-search" placeholder="Search route, bus, driver..." />
-                    <div class="top-icon warning">!</div>
-                    <div class="top-icon info">?</div>
                     <div class="admin-chip">
-                        <div class="admin-avatar">D</div>
+                        <div class="admin-avatar">@initial</div>
                         <div>
-                            <strong>Admin</strong>
-                            <small>Depot HQ</small>
+                            <strong>@fullName</strong>
+                            <small>@(string.IsNullOrWhiteSpace(username) ? role : $"{username} · {role}")</small>
                         </div>
                     </div>
                 </div>

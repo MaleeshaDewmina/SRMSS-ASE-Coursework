@@ -1,170 +1,204 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SRMSS.Web.Data;
+using SRMSS.Web.Filters;
 using SRMSS.Web.Models;
+using SRMSS.Web.Services;
 
 namespace SRMSS.Web.Controllers
 {
+    [RoleAuthorize("SuperAdmin", "Admin")]
     public class TransportRoutesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
-        public TransportRoutesController(ApplicationDbContext context)
+        public TransportRoutesController(
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
-        // GET: TransportRoutes
-public async Task<IActionResult> Index()
-{
-    var routes = await _context.TransportRoutes
-        .Include(r => r.RouteStops)
-        .OrderBy(r => r.RouteName)
-        .ToListAsync();
+        public async Task<IActionResult> Index()
+        {
+            var routes = await _context.TransportRoutes
+                .Include(r => r.RouteStops)
+                .OrderBy(r => r.RouteName)
+                .ToListAsync();
 
-    return View(routes);
-}
-        // GET: TransportRoutes/Details/5
-public async Task<IActionResult> Details(int? id)
-{
-    if (id == null)
-    {
-        return NotFound();
-    }
+            return View(routes);
+        }
 
-    var transportRoute = await _context.TransportRoutes
-        .Include(r => r.RouteStops)
-        .FirstOrDefaultAsync(m => m.Id == id);
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
 
-    if (transportRoute == null)
-    {
-        return NotFound();
-    }
+            var transportRoute = await _context.TransportRoutes
+                .Include(r => r.RouteStops)
+                .FirstOrDefaultAsync(r => r.Id == id);
 
-    return View(transportRoute);
-}
+            if (transportRoute == null)
+            {
+                return NotFound();
+            }
 
-        // GET: TransportRoutes/Create
+            return View(transportRoute);
+        }
+
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: TransportRoutes/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,RouteName,StartPoint,EndPoint,DistanceKm,EstimatedDurationMinutes,ServiceType,Status")] TransportRoute transportRoute)
+        public async Task<IActionResult> Create(
+            [Bind("Id,RouteName,StartPoint,EndPoint,DistanceKm,EstimatedDurationMinutes,ServiceType,Status")]
+            TransportRoute transportRoute)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(transportRoute);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return View(transportRoute);
             }
+
+            _context.TransportRoutes.Add(transportRoute);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                "Create Route",
+                "TransportRoutes",
+                transportRoute.Id,
+                $"Created route {transportRoute.RouteName}: {transportRoute.StartPoint} to {transportRoute.EndPoint}"
+            );
+
+            TempData["SuccessMessage"] = "Route created successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var transportRoute = await _context.TransportRoutes
+                .Include(r => r.RouteStops)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (transportRoute == null)
+            {
+                return NotFound();
+            }
+
             return View(transportRoute);
         }
 
-        // GET: TransportRoutes/Edit/5
-// GET: TransportRoutes/Edit/5
-public async Task<IActionResult> Edit(int? id)
-{
-    if (id == null)
-    {
-        return NotFound();
-    }
-
-    var transportRoute = await _context.TransportRoutes
-        .Include(r => r.RouteStops)
-        .FirstOrDefaultAsync(r => r.Id == id);
-
-    if (transportRoute == null)
-    {
-        return NotFound();
-    }
-
-    return View(transportRoute);
-}
-
-        // POST: TransportRoutes/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,RouteName,StartPoint,EndPoint,DistanceKm,EstimatedDurationMinutes,ServiceType,Status")] TransportRoute transportRoute)
+        public async Task<IActionResult> Edit(
+            int id,
+            [Bind("Id,RouteName,StartPoint,EndPoint,DistanceKm,EstimatedDurationMinutes,ServiceType,Status")]
+            TransportRoute transportRoute)
         {
             if (id != transportRoute.Id)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(transportRoute);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!TransportRouteExists(transportRoute.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                return View(transportRoute);
             }
+
+            try
+            {
+                _context.TransportRoutes.Update(transportRoute);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TransportRouteExists(transportRoute.Id))
+                {
+                    return NotFound();
+                }
+
+                throw;
+            }
+
+            await _auditLogService.LogAsync(
+                "Update Route",
+                "TransportRoutes",
+                transportRoute.Id,
+                $"Updated route {transportRoute.RouteName}: {transportRoute.StartPoint} to {transportRoute.EndPoint}"
+            );
+
+            TempData["SuccessMessage"] = "Route updated successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var transportRoute = await _context.TransportRoutes
+                .Include(r => r.RouteStops)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (transportRoute == null)
+            {
+                return NotFound();
+            }
+
             return View(transportRoute);
         }
 
-        // GET: TransportRoutes/Delete/5
-public async Task<IActionResult> Delete(int? id)
-{
-    if (id == null)
-    {
-        return NotFound();
-    }
-
-    var transportRoute = await _context.TransportRoutes
-        .Include(r => r.RouteStops)
-        .FirstOrDefaultAsync(m => m.Id == id);
-
-    if (transportRoute == null)
-    {
-        return NotFound();
-    }
-
-    return View(transportRoute);
-}
-
-        // POST: TransportRoutes/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var transportRoute = await _context.TransportRoutes.FindAsync(id);
-            if (transportRoute != null)
+            var transportRoute = await _context.TransportRoutes
+                .Include(r => r.Schedules)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (transportRoute == null)
             {
-                _context.TransportRoutes.Remove(transportRoute);
+                return NotFound();
             }
 
+            if (transportRoute.Schedules.Any())
+            {
+                TempData["ErrorMessage"] = "This route cannot be deleted because schedules are assigned to it. Remove or reassign those schedules first.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            string routeName = transportRoute.RouteName;
+
+            _context.TransportRoutes.Remove(transportRoute);
             await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                "Delete Route",
+                "TransportRoutes",
+                id,
+                $"Deleted route {routeName}"
+            );
+
+            TempData["SuccessMessage"] = "Route deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
 
         private bool TransportRouteExists(int id)
         {
-            return _context.TransportRoutes.Any(e => e.Id == id);
+            return _context.TransportRoutes.Any(r => r.Id == id);
         }
     }
 }

@@ -124,6 +124,7 @@
         <div class="subtitle">Update account details, role, status or reset password.</div>
 
         <form asp-action="Edit" asp-controller="Users" method="post">
+            <div asp-validation-summary="ModelOnly" class="validation mb-3"></div>
             @Html.AntiForgeryToken()
             <input asp-for="Id" type="hidden" />
 
@@ -161,6 +162,7 @@
             <div class="checkbox-row">
                 <input asp-for="IsActive" />
                 <label asp-for="IsActive">Active account</label>
+                <span asp-validation-for="IsActive" class="validation"></span>
             </div>
 
             <div class="btn-row">

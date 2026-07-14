@@ -2,20 +2,26 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SRMSS.Web.Data;
+using SRMSS.Web.Filters;
 using SRMSS.Web.Models;
+using SRMSS.Web.Services;
 
 namespace SRMSS.Web.Controllers
 {
+    [RoleAuthorize("SuperAdmin", "Admin")]
     public class RouteStopsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
-        public RouteStopsController(ApplicationDbContext context)
+        public RouteStopsController(
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
-        // GET: RouteStops
         public async Task<IActionResult> Index()
         {
             var routes = await _context.TransportRoutes
@@ -27,7 +33,6 @@ namespace SRMSS.Web.Controllers
             return View(routes);
         }
 
-        // GET: RouteStops/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -37,7 +42,7 @@ namespace SRMSS.Web.Controllers
 
             var routeStop = await _context.RouteStops
                 .Include(r => r.TransportRoute)
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .FirstOrDefaultAsync(r => r.Id == id);
 
             if (routeStop == null)
             {
@@ -47,42 +52,40 @@ namespace SRMSS.Web.Controllers
             return View(routeStop);
         }
 
-        // GET: RouteStops/Create
         public IActionResult Create()
         {
             LoadRoutesDropDown();
             return View();
         }
 
-        // POST: RouteStops/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Id,TransportRouteId,StopName,StopOrder,EstimatedMinutesFromStart")] RouteStop routeStop)
+            [Bind("Id,TransportRouteId,StopName,StopOrder,EstimatedMinutesFromStart")]
+            RouteStop routeStop)
         {
-            bool duplicateStopOrder = await _context.RouteStops.AnyAsync(rs =>
-                rs.TransportRouteId == routeStop.TransportRouteId &&
-                rs.StopOrder == routeStop.StopOrder
+            await ValidateStopOrder(routeStop);
+
+            if (!ModelState.IsValid)
+            {
+                LoadRoutesDropDown(routeStop.TransportRouteId);
+                return View(routeStop);
+            }
+
+            _context.RouteStops.Add(routeStop);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                "Create Route Stop",
+                "RouteStops",
+                routeStop.Id,
+                $"Added stop {routeStop.StopName} at order {routeStop.StopOrder} to route #{routeStop.TransportRouteId}"
             );
 
-            if (duplicateStopOrder)
-            {
-                ModelState.AddModelError("StopOrder", "This stop order already exists for the selected route.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                _context.RouteStops.Add(routeStop);
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
-            }
-
-            LoadRoutesDropDown(routeStop.TransportRouteId);
-            return View(routeStop);
+            TempData["SuccessMessage"] = "Route stop added successfully.";
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: RouteStops/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -103,54 +106,52 @@ namespace SRMSS.Web.Controllers
             return View(routeStop);
         }
 
-        // POST: RouteStops/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Id,TransportRouteId,StopName,StopOrder,EstimatedMinutesFromStart")] RouteStop routeStop)
+            [Bind("Id,TransportRouteId,StopName,StopOrder,EstimatedMinutesFromStart")]
+            RouteStop routeStop)
         {
             if (id != routeStop.Id)
             {
                 return NotFound();
             }
 
-            bool duplicateStopOrder = await _context.RouteStops.AnyAsync(rs =>
-                rs.Id != routeStop.Id &&
-                rs.TransportRouteId == routeStop.TransportRouteId &&
-                rs.StopOrder == routeStop.StopOrder
+            await ValidateStopOrder(routeStop, routeStop.Id);
+
+            if (!ModelState.IsValid)
+            {
+                LoadRoutesDropDown(routeStop.TransportRouteId);
+                return View(routeStop);
+            }
+
+            try
+            {
+                _context.RouteStops.Update(routeStop);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!RouteStopExists(routeStop.Id))
+                {
+                    return NotFound();
+                }
+
+                throw;
+            }
+
+            await _auditLogService.LogAsync(
+                "Update Route Stop",
+                "RouteStops",
+                routeStop.Id,
+                $"Updated stop {routeStop.StopName} at order {routeStop.StopOrder} on route #{routeStop.TransportRouteId}"
             );
 
-            if (duplicateStopOrder)
-            {
-                ModelState.AddModelError("StopOrder", "This stop order already exists for the selected route.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.RouteStops.Update(routeStop);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!RouteStopExists(routeStop.Id))
-                    {
-                        return NotFound();
-                    }
-
-                    throw;
-                }
-
-                return RedirectToAction(nameof(Index));
-            }
-
-            LoadRoutesDropDown(routeStop.TransportRouteId);
-            return View(routeStop);
+            TempData["SuccessMessage"] = "Route stop updated successfully.";
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: RouteStops/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -160,7 +161,7 @@ namespace SRMSS.Web.Controllers
 
             var routeStop = await _context.RouteStops
                 .Include(r => r.TransportRoute)
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .FirstOrDefaultAsync(r => r.Id == id);
 
             if (routeStop == null)
             {
@@ -170,20 +171,54 @@ namespace SRMSS.Web.Controllers
             return View(routeStop);
         }
 
-        // POST: RouteStops/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var routeStop = await _context.RouteStops.FindAsync(id);
 
-            if (routeStop != null)
+            if (routeStop == null)
             {
-                _context.RouteStops.Remove(routeStop);
-                await _context.SaveChangesAsync();
+                return NotFound();
             }
 
+            string stopName = routeStop.StopName;
+            int routeId = routeStop.TransportRouteId;
+
+            _context.RouteStops.Remove(routeStop);
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(
+                "Delete Route Stop",
+                "RouteStops",
+                id,
+                $"Deleted stop {stopName} from route #{routeId}"
+            );
+
+            TempData["SuccessMessage"] = "Route stop deleted successfully.";
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task ValidateStopOrder(RouteStop routeStop, int? editingStopId = null)
+        {
+            bool routeExists = await _context.TransportRoutes
+                .AnyAsync(r => r.Id == routeStop.TransportRouteId);
+
+            if (!routeExists)
+            {
+                ModelState.AddModelError("TransportRouteId", "Selected route does not exist.");
+                return;
+            }
+
+            bool duplicateStopOrder = await _context.RouteStops.AnyAsync(rs =>
+                rs.Id != editingStopId &&
+                rs.TransportRouteId == routeStop.TransportRouteId &&
+                rs.StopOrder == routeStop.StopOrder);
+
+            if (duplicateStopOrder)
+            {
+                ModelState.AddModelError("StopOrder", "This stop order already exists for the selected route.");
+            }
         }
 
         private bool RouteStopExists(int id)
