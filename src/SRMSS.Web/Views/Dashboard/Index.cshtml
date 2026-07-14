@@ -227,6 +227,11 @@
         font-weight: 900;
     }
 
+    .kpi-icon svg {
+        width: 21px;
+        height: 21px;
+    }
+
     .kpi-number {
         color: #06111f;
         font-size: 38px;
@@ -417,6 +422,11 @@
         font-weight: 950;
     }
 
+    .quick-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
     .empty-state {
         padding: 30px;
         text-align: center;
@@ -516,7 +526,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Admins</span>
-                    <span class="kpi-icon">A</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"users"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -532,7 +542,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Users</span>
-                    <span class="kpi-icon">U</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"users"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -548,7 +558,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Customers</span>
-                    <span class="kpi-icon">C</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"customer"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -564,7 +574,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Audit Logs</span>
-                    <span class="kpi-icon">L</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"audit"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -580,7 +590,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Active Accounts</span>
-                    <span class="kpi-icon">+</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"active"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -596,7 +606,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Inactive Accounts</span>
-                    <span class="kpi-icon">-</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"inactive"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -612,7 +622,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Routes</span>
-                    <span class="kpi-icon">R</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"route"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -628,7 +638,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Schedules</span>
-                    <span class="kpi-icon">S</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"schedule"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -684,7 +694,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Routes</span>
-                    <span class="kpi-icon">R</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"route"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -700,7 +710,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Schedules</span>
-                    <span class="kpi-icon">S</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"schedule"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -716,7 +726,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Active Trips</span>
-                    <span class="kpi-icon">A</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"active"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -732,7 +742,7 @@
             <div class="kpi-card">
                 <div class="kpi-top">
                     <span class="kpi-label">Delayed Trips</span>
-                    <span class="kpi-icon">!</span>
+                    <span class="kpi-icon"><partial name="_AppIcon" model='"trip"' /></span>
                 </div>
 
                 <div class="kpi-number count-up"
@@ -862,7 +872,7 @@
                     <a href="/TransportRoutes/Create"
                        class="quick-action">
 
-                        <span class="quick-icon">+</span>
+                        <span class="quick-icon"><partial name="_AppIcon" model='"add"' /></span>
 
                         Add New Route
 
@@ -871,7 +881,7 @@
                     <a href="/Schedules/Create"
                        class="quick-action">
 
-                        <span class="quick-icon">+</span>
+                        <span class="quick-icon"><partial name="_AppIcon" model='"add"' /></span>
 
                         Add Schedule
 
@@ -880,7 +890,7 @@
                     <a href="/TransportRoutes"
                        class="quick-action">
 
-                        <span class="quick-icon">R</span>
+                        <span class="quick-icon"><partial name="_AppIcon" model='"route"' /></span>
 
                         Manage Routes
 
@@ -889,7 +899,7 @@
                     <a href="/TripStatus"
                        class="quick-action">
 
-                        <span class="quick-icon">T</span>
+                        <span class="quick-icon"><partial name="_AppIcon" model='"trip"' /></span>
 
                         View Trip Status
 
@@ -901,7 +911,7 @@
                     <a href="/Users"
                        class="quick-action">
 
-                        <span class="quick-icon">U</span>
+                        <span class="quick-icon"><partial name="_AppIcon" model='"users"' /></span>
 
                         Manage Users
 
@@ -910,7 +920,7 @@
                     <a href="/AuditLogs"
                        class="quick-action">
 
-                        <span class="quick-icon">L</span>
+                        <span class="quick-icon"><partial name="_AppIcon" model='"audit"' /></span>
 
                         Audit Logs
 
@@ -922,7 +932,7 @@
                     <a href="/CustomerRoutes"
                        class="quick-action">
 
-                        <span class="quick-icon">S</span>
+                        <span class="quick-icon"><partial name="_AppIcon" model='"search"' /></span>
 
                         Search Routes
 
@@ -932,7 +942,7 @@
                 <a href="/Account/Profile"
                    class="quick-action">
 
-                    <span class="quick-icon">P</span>
+                    <span class="quick-icon"><partial name="_AppIcon" model='"profile"' /></span>
 
                     My Profile
 
