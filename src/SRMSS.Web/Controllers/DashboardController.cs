@@ -24,72 +24,94 @@ namespace SRMSS.Web.Controllers
             string role = HttpContext.Session.GetString(SessionKeys.Role) ?? string.Empty;
             string fullName = HttpContext.Session.GetString(SessionKeys.FullName) ?? "User";
             string username = HttpContext.Session.GetString(SessionKeys.Username) ?? string.Empty;
-            int? userId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+            int? currentUserId = HttpContext.Session.GetInt32(SessionKeys.UserId);
 
             var model = new DashboardViewModel
             {
                 FullName = fullName,
                 Username = username,
-                Role = role
+                Role = role,
+
+                TotalAdmins = await _context.AppUsers
+                    .CountAsync(u => u.Role == "Admin"),
+
+                TotalUsers = await _context.AppUsers
+                    .CountAsync(u => u.Role == "User"),
+
+                TotalCustomers = await _context.AppUsers
+                    .CountAsync(u => u.Role == "Customer"),
+
+                ActiveAccounts = await _context.AppUsers
+                    .CountAsync(u => u.IsActive),
+
+                InactiveAccounts = await _context.AppUsers
+                    .CountAsync(u => !u.IsActive),
+
+                TotalAuditLogs = await _context.AuditLogs.CountAsync(),
+
+                TotalRoutes = await _context.TransportRoutes.CountAsync(),
+
+                TotalSchedules = await _context.Schedules.CountAsync(),
+
+                TotalDrivers = await _context.Drivers.CountAsync(),
+
+                TotalVehicles = await _context.Vehicles.CountAsync(),
+
+                AvailableRoutes = await _context.TransportRoutes
+                    .CountAsync(r => r.Status == "Active"),
+
+                AvailableSchedules = await _context.Schedules
+                    .CountAsync(s =>
+                        s.Status != "Cancelled" &&
+                        s.ScheduleDate >= DateTime.Today),
+
+                FavoriteRoutes = currentUserId.HasValue
+                    ? await _context.FavoriteRoutes
+                        .CountAsync(f =>
+                            f.CustomerKey == currentUserId.Value.ToString())
+                    : 0,
+
+                ActiveTrips = await _context.Schedules
+                    .CountAsync(s =>
+                        s.Status == "On Time" ||
+                        s.Status == "Departed"),
+
+                DelayedTrips = await _context.Schedules
+                    .CountAsync(s => s.Status == "Delayed"),
+
+                CompletedTrips = await _context.Schedules
+                    .CountAsync(s => s.Status == "Completed")
             };
 
-            switch (role)
+            DateTime startDate = DateTime.Today.AddDays(-6);
+
+            var recentActivityData = await _context.AuditLogs
+                .Where(a => a.CreatedAt >= startDate)
+                .GroupBy(a => a.CreatedAt.Date)
+                .Select(group => new
+                {
+                    Date = group.Key,
+                    Count = group.Count()
+                })
+                .ToListAsync();
+
+            for (int i = 0; i < 7; i++)
             {
-                case "SuperAdmin":
-                    model.TotalAdmins = await _context.AppUsers.CountAsync(u => u.Role == "Admin");
-                    model.TotalUsers = await _context.AppUsers.CountAsync(u => u.Role == "User");
-                    model.TotalCustomers = await _context.AppUsers.CountAsync(u => u.Role == "Customer");
-                    model.ActiveAccounts = await _context.AppUsers.CountAsync(u => u.IsActive);
-                    model.InactiveAccounts = await _context.AppUsers.CountAsync(u => !u.IsActive);
-                    model.TotalAuditLogs = await _context.AuditLogs.CountAsync();
-                    model.TotalRoutes = await _context.TransportRoutes.CountAsync();
-                    model.TotalSchedules = await _context.Schedules.CountAsync();
+                DateTime date = startDate.AddDays(i);
 
-                    model.RecentAuditLogs = await _context.AuditLogs
-                        .Include(a => a.AppUser)
-                        .OrderByDescending(a => a.CreatedAt)
-                        .Take(5)
-                        .ToListAsync();
-                    break;
+                int count = recentActivityData
+                    .FirstOrDefault(a => a.Date == date.Date)
+                    ?.Count ?? 0;
 
-                case "Admin":
-                    model.TotalRoutes = await _context.TransportRoutes.CountAsync();
-                    model.TotalSchedules = await _context.Schedules.CountAsync();
-                    model.TotalDrivers = await _context.Drivers.CountAsync();
-                    model.TotalVehicles = await _context.Vehicles.CountAsync();
-                    model.ActiveTrips = await _context.Schedules.CountAsync(s =>
-                        s.Status == "On Time" || s.Status == "Departed");
-                    model.DelayedTrips = await _context.Schedules.CountAsync(s => s.Status == "Delayed");
-                    model.CompletedTrips = await _context.Schedules.CountAsync(s => s.Status == "Completed");
-                    model.TotalCustomers = await _context.AppUsers.CountAsync(u => u.Role == "Customer");
-                    break;
-
-                case "User":
-                    model.TotalSchedules = await _context.Schedules.CountAsync();
-                    model.ActiveTrips = await _context.Schedules.CountAsync(s =>
-                        s.Status == "On Time" || s.Status == "Departed");
-                    model.DelayedTrips = await _context.Schedules.CountAsync(s => s.Status == "Delayed");
-                    model.CompletedTrips = await _context.Schedules.CountAsync(s => s.Status == "Completed");
-                    break;
-
-                case "Customer":
-                    model.AvailableRoutes = await _context.TransportRoutes.CountAsync(r => r.Status == "Active");
-                    model.AvailableSchedules = await _context.Schedules.CountAsync(s =>
-                        s.TransportRoute != null &&
-                        s.TransportRoute!.Status == "Active" &&
-                        s.Status != "Cancelled");
-                    model.ActiveTrips = await _context.Schedules.CountAsync(s =>
-                        s.Status == "On Time" || s.Status == "Departed");
-                    model.DelayedTrips = await _context.Schedules.CountAsync(s => s.Status == "Delayed");
-
-                    if (userId.HasValue)
-                    {
-                        string customerKey = $"CUSTOMER:{userId.Value}";
-                        model.FavoriteRoutes = await _context.FavoriteRoutes
-                            .CountAsync(f => f.CustomerKey == customerKey);
-                    }
-                    break;
+                model.ActivityLabels.Add(date.ToString("ddd"));
+                model.ActivityCounts.Add(count);
             }
+
+            model.RecentAuditLogs = await _context.AuditLogs
+                .Include(a => a.AppUser)
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(6)
+                .ToListAsync();
 
             return View(model);
         }
