@@ -1,8 +1,7 @@
+@model SRMSS.Web.ViewModels.DashboardViewModel
+
 @{
     ViewData["Title"] = "Dashboard";
-
-    string role = ViewBag.Role ?? "";
-    string fullName = ViewBag.FullName ?? "User";
 }
 
 <style>
@@ -12,7 +11,7 @@
 
     .dashboard-shell {
         display: grid;
-        grid-template-columns: 280px 1fr;
+        grid-template-columns: 280px minmax(0, 1fr);
         min-height: calc(100vh - 20px);
         gap: 24px;
         padding: 24px;
@@ -23,6 +22,8 @@
         color: white;
         border-radius: 28px;
         padding: 26px 20px;
+        display: flex;
+        flex-direction: column;
     }
 
     .brand {
@@ -45,11 +46,29 @@
         border-radius: 14px;
         margin-bottom: 8px;
         font-weight: 700;
+        transition: 0.2s ease;
     }
 
-    .nav-link-custom.active,
-    .nav-link-custom:hover {
+    .nav-link-custom:hover,
+    .nav-link-custom.active {
         background: #2563eb;
+        color: white;
+    }
+
+    .logout {
+        display: block;
+        margin-top: auto;
+        padding: 13px 15px;
+        border-radius: 14px;
+        background: #ef4444;
+        color: white;
+        text-decoration: none;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    .logout:hover {
+        background: #dc2626;
         color: white;
     }
 
@@ -60,16 +79,21 @@
     .top-card {
         background: white;
         border-radius: 28px;
-        padding: 26px;
+        padding: 28px;
         border: 1px solid #d8e6f3;
         box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
         margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
     }
 
     .top-card h1 {
-        margin: 0 0 6px;
+        margin: 0 0 8px;
         color: #06111f;
         font-size: 32px;
+        font-weight: 900;
     }
 
     .top-card p {
@@ -79,17 +103,17 @@
 
     .role-badge {
         display: inline-block;
-        margin-top: 16px;
         padding: 10px 14px;
         border-radius: 999px;
         background: #dbeafe;
         color: #1d4ed8;
-        font-weight: 800;
+        font-weight: 900;
+        white-space: nowrap;
     }
 
     .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 18px;
         margin-bottom: 24px;
     }
@@ -100,6 +124,18 @@
         padding: 22px;
         border: 1px solid #d8e6f3;
         box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: #2563eb;
     }
 
     .kpi-title {
@@ -110,20 +146,50 @@
 
     .kpi-value {
         color: #06111f;
-        font-size: 34px;
+        font-size: 36px;
         font-weight: 900;
         margin-top: 8px;
     }
 
+    .section-card {
+        background: white;
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid #d8e6f3;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+        margin-bottom: 24px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+
+    .section-header h2 {
+        margin: 0;
+        color: #06111f;
+        font-size: 22px;
+        font-weight: 900;
+    }
+
+    .section-header a {
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 800;
+    }
+
     .module-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 18px;
     }
 
     .module-card {
-        background: white;
-        border-radius: 24px;
+        background: #f8fafc;
+        border-radius: 20px;
         padding: 22px;
         border: 1px solid #d8e6f3;
         min-height: 150px;
@@ -132,55 +198,121 @@
     .module-card h3 {
         margin: 0 0 10px;
         color: #06111f;
+        font-size: 18px;
     }
 
     .module-card p {
         color: #64748b;
-        line-height: 1.5;
+        line-height: 1.6;
+        margin: 0;
     }
 
-    .logout {
-        display: block;
-        margin-top: 26px;
-        padding: 13px 15px;
-        border-radius: 14px;
-        background: #ef4444;
-        color: white;
-        text-decoration: none;
-        font-weight: 800;
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .activity-item {
+        display: grid;
+        grid-template-columns: 160px 150px 1fr;
+        gap: 15px;
+        align-items: center;
+        padding: 14px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+    }
+
+    .activity-action {
+        font-weight: 900;
+        color: #1d4ed8;
+    }
+
+    .activity-user {
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .activity-description {
+        color: #64748b;
+    }
+
+    .activity-time {
+        color: #94a3b8;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .empty-state {
+        padding: 24px;
         text-align: center;
+        color: #64748b;
+        background: #f8fafc;
+        border-radius: 16px;
     }
 
-    @@media (max-width: 950px) {
+    @@media (max-width: 1100px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .module-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 850px) {
         .dashboard-shell {
             grid-template-columns: 1fr;
             padding: 14px;
         }
 
-        .kpi-grid,
-        .module-grid {
+        .sidebar {
+            min-height: auto;
+        }
+
+        .logout {
+            margin-top: 20px;
+        }
+
+        .top-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .activity-item {
+            grid-template-columns: 1fr;
+            gap: 6px;
+        }
+    }
+
+    @@media (max-width: 520px) {
+        .kpi-grid {
             grid-template-columns: 1fr;
         }
     }
 </style>
 
 <div class="dashboard-shell">
+
     <aside class="sidebar">
+
         <div class="brand">SRMSS</div>
-        <div class="brand-sub">Smart Route Platform</div>
+        <div class="brand-sub">Smart Route Management System</div>
 
         <a class="nav-link-custom active" href="/Dashboard">Dashboard</a>
+
         <a class="nav-link-custom" href="/Account/Profile">My Profile</a>
 
-        @if (role == "SuperAdmin")
+        @if (Model.Role == "SuperAdmin")
         {
             <a class="nav-link-custom" href="/Users?roleFilter=Admin">Manage Admins</a>
             <a class="nav-link-custom" href="/Users?roleFilter=User">Manage Users</a>
             <a class="nav-link-custom" href="/Users?roleFilter=Customer">Manage Customers</a>
             <a class="nav-link-custom" href="/AuditLogs">Audit Logs</a>
-            <a class="nav-link-custom" href="#">Reports</a>
         }
-        else if (role == "Admin")
+        else if (Model.Role == "Admin")
         {
             <a class="nav-link-custom" href="/Users">Manage Users</a>
             <a class="nav-link-custom" href="#">Routes</a>
@@ -189,114 +321,331 @@
             <a class="nav-link-custom" href="#">Vehicles</a>
             <a class="nav-link-custom" href="#">Reports</a>
         }
-        else if (role == "User")
+        else if (Model.Role == "User")
         {
             <a class="nav-link-custom" href="#">My Trips</a>
             <a class="nav-link-custom" href="#">Assigned Routes</a>
-            <a class="nav-link-custom" href="#">Fuel Log</a>
+            <a class="nav-link-custom" href="#">Fuel Logs</a>
             <a class="nav-link-custom" href="#">Report Maintenance</a>
         }
-        else if (role == "Customer")
+        else if (Model.Role == "Customer")
         {
             <a class="nav-link-custom" href="#">Search Routes</a>
             <a class="nav-link-custom" href="#">Timetables</a>
-            <a class="nav-link-custom" href="#">Favorites</a>
+            <a class="nav-link-custom" href="#">Favorite Routes</a>
             <a class="nav-link-custom" href="#">Feedback</a>
         }
 
         <a class="logout" href="/Account/Logout">Logout</a>
+
     </aside>
 
     <main class="main">
+
         <section class="top-card">
-            <h1>Welcome, @fullName</h1>
-            <p>Your dashboard is customized based on your SRMSS role.</p>
-            <span class="role-badge">@role Dashboard</span>
+
+            <div>
+                <h1>Welcome, @Model.FullName</h1>
+                <p>
+                    Signed in as <strong>@Model.Username</strong>.
+                    Your dashboard shows live information from the SRMSS database.
+                </p>
+            </div>
+
+            <span class="role-badge">@Model.Role Dashboard</span>
+
         </section>
 
-        <section class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-title">Routes</div>
-                <div class="kpi-value">24</div>
-            </div>
+        @if (Model.Role == "SuperAdmin")
+        {
+            <section class="kpi-grid">
 
-            <div class="kpi-card">
-                <div class="kpi-title">Schedules</div>
-                <div class="kpi-value">58</div>
-            </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Admins</div>
+                    <div class="kpi-value">@Model.TotalAdmins</div>
+                </div>
 
-            <div class="kpi-card">
-                <div class="kpi-title">Active Trips</div>
-                <div class="kpi-value">12</div>
-            </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Users</div>
+                    <div class="kpi-value">@Model.TotalUsers</div>
+                </div>
 
-            <div class="kpi-card">
-                <div class="kpi-title">Alerts</div>
-                <div class="kpi-value">03</div>
-            </div>
-        </section>
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Customers</div>
+                    <div class="kpi-value">@Model.TotalCustomers</div>
+                </div>
 
-        <section class="module-grid">
-            @if (role == "SuperAdmin")
-            {
-                <div class="module-card">
-                    <h3>System Control</h3>
-                    <p>Manage admins, users, customers and system wide access rules.</p>
+                <div class="kpi-card">
+                    <div class="kpi-title">Audit Logs</div>
+                    <div class="kpi-value">@Model.TotalAuditLogs</div>
                 </div>
-                <div class="module-card">
-                    <h3>Audit Logs</h3>
-                    <p>Track important user activities and security related actions.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Active Accounts</div>
+                    <div class="kpi-value">@Model.ActiveAccounts</div>
                 </div>
-                <div class="module-card">
-                    <h3>Enterprise Reports</h3>
-                    <p>View full operational reports across the SRMSS platform.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Inactive Accounts</div>
+                    <div class="kpi-value">@Model.InactiveAccounts</div>
                 </div>
-            }
-            else if (role == "Admin")
-            {
-                <div class="module-card">
-                    <h3>Depot Operations</h3>
-                    <p>Manage routes, route stops, schedules, vehicles and drivers.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Routes</div>
+                    <div class="kpi-value">@Model.TotalRoutes</div>
                 </div>
-                <div class="module-card">
-                    <h3>Schedule Control</h3>
-                    <p>Review schedule conflicts and manage trip status updates.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Schedules</div>
+                    <div class="kpi-value">@Model.TotalSchedules</div>
                 </div>
-                <div class="module-card">
-                    <h3>Reports</h3>
-                    <p>Analyze routes, drivers, vehicles, maintenance and fuel logs.</p>
+
+            </section>
+
+            <section class="section-card">
+
+                <div class="section-header">
+                    <h2>Recent System Activity</h2>
+                    <a href="/AuditLogs">View All Logs</a>
                 </div>
-            }
-            else if (role == "User")
-            {
-                <div class="module-card">
-                    <h3>Assigned Trips</h3>
-                    <p>View assigned route schedules and update trip progress.</p>
+
+                @if (Model.RecentAuditLogs.Any())
+                {
+                    <div class="activity-list">
+
+                        @foreach (var log in Model.RecentAuditLogs)
+                        {
+                            <div class="activity-item">
+
+                                <div>
+                                    <div class="activity-action">@log.Action</div>
+                                    <div class="activity-time">
+                                        @log.CreatedAt.ToString("yyyy-MM-dd hh:mm tt")
+                                    </div>
+                                </div>
+
+                                <div class="activity-user">
+                                    @(log.AppUser != null
+                                        ? log.AppUser.Username
+                                        : "System")
+                                </div>
+
+                                <div class="activity-description">
+                                    @log.Description
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No recent system activity available.
+                    </div>
+                }
+
+            </section>
+        }
+        else if (Model.Role == "Admin")
+        {
+            <section class="kpi-grid">
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Routes</div>
+                    <div class="kpi-value">@Model.TotalRoutes</div>
                 </div>
-                <div class="module-card">
-                    <h3>Fuel Logs</h3>
-                    <p>Submit fuel usage information for assigned operational work.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Schedules</div>
+                    <div class="kpi-value">@Model.TotalSchedules</div>
                 </div>
-                <div class="module-card">
-                    <h3>Maintenance Reports</h3>
-                    <p>Report vehicle issues and operational problems to admins.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Drivers</div>
+                    <div class="kpi-value">@Model.TotalDrivers</div>
                 </div>
-            }
-            else if (role == "Customer")
-            {
-                <div class="module-card">
-                    <h3>Search Routes</h3>
-                    <p>Find routes by start point, destination, timetable and status.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Vehicles</div>
+                    <div class="kpi-value">@Model.TotalVehicles</div>
                 </div>
-                <div class="module-card">
-                    <h3>Favorite Routes</h3>
-                    <p>Save common journeys for faster access in the customer portal.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Active Trips</div>
+                    <div class="kpi-value">@Model.ActiveTrips</div>
                 </div>
-                <div class="module-card">
-                    <h3>Feedback</h3>
-                    <p>Send feedback or inquiries about route and transport service quality.</p>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Delayed Trips</div>
+                    <div class="kpi-value">@Model.DelayedTrips</div>
                 </div>
-            }
-        </section>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Completed Trips</div>
+                    <div class="kpi-value">@Model.CompletedTrips</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Customers</div>
+                    <div class="kpi-value">@Model.TotalCustomers</div>
+                </div>
+
+            </section>
+
+            <section class="section-card">
+
+                <div class="section-header">
+                    <h2>Depot Management</h2>
+                </div>
+
+                <div class="module-grid">
+
+                    <div class="module-card">
+                        <h3>Route Management</h3>
+                        <p>
+                            Manage public transport routes, route stops and service information.
+                        </p>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>Schedule Management</h3>
+                        <p>
+                            Manage route schedules, assignments, conflict detection and trip status.
+                        </p>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>Fleet Management</h3>
+                        <p>
+                            Manage drivers, vehicles, fuel usage and vehicle maintenance information.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+        }
+        else if (Model.Role == "User")
+        {
+            <section class="kpi-grid">
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Schedules</div>
+                    <div class="kpi-value">@Model.TotalSchedules</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Active Trips</div>
+                    <div class="kpi-value">@Model.ActiveTrips</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Delayed Trips</div>
+                    <div class="kpi-value">@Model.DelayedTrips</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Completed Trips</div>
+                    <div class="kpi-value">@Model.CompletedTrips</div>
+                </div>
+
+            </section>
+
+            <section class="section-card">
+
+                <div class="section-header">
+                    <h2>Operations</h2>
+                </div>
+
+                <div class="module-grid">
+
+                    <div class="module-card">
+                        <h3>Assigned Trips</h3>
+                        <p>
+                            View assigned schedules and transport operations.
+                        </p>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>Fuel Logs</h3>
+                        <p>
+                            Record fuel consumption for assigned vehicle operations.
+                        </p>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>Maintenance Reports</h3>
+                        <p>
+                            Report vehicle issues and maintenance requirements.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+        }
+        else if (Model.Role == "Customer")
+        {
+            <section class="kpi-grid">
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Available Routes</div>
+                    <div class="kpi-value">@Model.TotalRoutes</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Available Schedules</div>
+                    <div class="kpi-value">@Model.TotalSchedules</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Active Trips</div>
+                    <div class="kpi-value">@Model.ActiveTrips</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Delayed Trips</div>
+                    <div class="kpi-value">@Model.DelayedTrips</div>
+                </div>
+
+            </section>
+
+            <section class="section-card">
+
+                <div class="section-header">
+                    <h2>Customer Portal</h2>
+                </div>
+
+                <div class="module-grid">
+
+                    <div class="module-card">
+                        <h3>Search Routes</h3>
+                        <p>
+                            Search public transport routes by starting point and destination.
+                        </p>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>View Timetables</h3>
+                        <p>
+                            Check route schedules, departure times and current trip status.
+                        </p>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>Favorite Routes</h3>
+                        <p>
+                            Save frequently used routes for faster future access.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+        }
+
     </main>
+
 </div>
