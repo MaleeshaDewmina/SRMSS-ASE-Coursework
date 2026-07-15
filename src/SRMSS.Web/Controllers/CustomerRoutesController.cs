@@ -22,107 +22,327 @@ namespace SRMSS.Web.Controllers
             _auditLogService = auditLogService;
         }
 
+
+        // =========================================================
+        // CUSTOMER KEY
+        // =========================================================
+
         private string GetCustomerKey()
         {
-            int? userId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+            int? userId =
+                HttpContext.Session.GetInt32(
+                    SessionKeys.UserId
+                );
 
             if (userId.HasValue)
             {
                 return $"CUSTOMER:{userId.Value}";
             }
 
-            string username = HttpContext.Session.GetString(SessionKeys.Username) ?? "UNKNOWN";
+            string username =
+                HttpContext.Session.GetString(
+                    SessionKeys.Username
+                )
+                ?? "UNKNOWN";
+
             return $"CUSTOMER:{username}";
         }
 
-        public async Task<IActionResult> Index(string? from, string? to)
+
+        // =========================================================
+        // CUSTOMER ROUTE SEARCH
+        // =========================================================
+
+        public async Task<IActionResult> Index(
+            string? from,
+            string? to)
         {
-            string customerKey = GetCustomerKey();
+            string customerKey =
+                GetCustomerKey();
 
-            var routesQuery = _context.TransportRoutes
-                .Include(r => r.RouteStops)
-                .Include(r => r.Schedules)
-                    .ThenInclude(s => s.Driver)
-                .Include(r => r.Schedules)
-                    .ThenInclude(s => s.Vehicle)
-                .Where(r => r.Status == "Active")
-                .AsSplitQuery()
-                .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(from))
+            // Load all active routes first.
+            // Searching is performed in memory so we can correctly
+            // validate the order of From and To points along a route.
+
+            var allActiveRoutes =
+                await _context.TransportRoutes
+
+                    .Include(route =>
+                        route.RouteStops)
+
+                    .Include(route =>
+                        route.Schedules)
+
+                        .ThenInclude(schedule =>
+                            schedule.Driver)
+
+                    .Include(route =>
+                        route.Schedules)
+
+                        .ThenInclude(schedule =>
+                            schedule.Vehicle)
+
+                    .Where(route =>
+                        route.Status == "Active")
+
+                    .AsSplitQuery()
+
+                    .OrderBy(route =>
+                        route.RouteName)
+
+                    .ToListAsync();
+
+
+            string cleanFrom =
+                string.IsNullOrWhiteSpace(from)
+                    ? string.Empty
+                    : from.Trim();
+
+
+            string cleanTo =
+                string.IsNullOrWhiteSpace(to)
+                    ? string.Empty
+                    : to.Trim();
+
+
+            bool searchPerformed =
+                !string.IsNullOrWhiteSpace(cleanFrom)
+                ||
+                !string.IsNullOrWhiteSpace(cleanTo);
+
+
+            List<TransportRoute> routes;
+
+
+            if (searchPerformed)
             {
-                string cleanFrom = from.Trim();
+                routes =
+                    allActiveRoutes
 
-                routesQuery = routesQuery.Where(r =>
-                    r.StartPoint.Contains(cleanFrom) ||
-                    r.RouteName.Contains(cleanFrom) ||
-                    r.RouteStops.Any(s => s.StopName.Contains(cleanFrom)));
+                        .Where(route =>
+                            MatchesJourney(
+                                route,
+                                cleanFrom,
+                                cleanTo
+                            )
+                        )
+
+                        .OrderBy(route =>
+                            route.RouteName)
+
+                        .ToList();
+            }
+            else
+            {
+                routes =
+                    allActiveRoutes;
             }
 
-            if (!string.IsNullOrWhiteSpace(to))
-            {
-                string cleanTo = to.Trim();
 
-                routesQuery = routesQuery.Where(r =>
-                    r.EndPoint.Contains(cleanTo) ||
-                    r.RouteName.Contains(cleanTo) ||
-                    r.RouteStops.Any(s => s.StopName.Contains(cleanTo)));
-            }
+            // =====================================================
+            // CUSTOMER FAVOURITES
+            // =====================================================
 
-            var routes = await routesQuery
-                .OrderBy(r => r.RouteName)
-                .ToListAsync();
+            var favoriteRoutes =
+                await _context.FavoriteRoutes
 
-            var favoriteRoutes = await _context.FavoriteRoutes
-                .Include(f => f.TransportRoute)
-                .Where(f => f.CustomerKey == customerKey)
-                .OrderByDescending(f => f.SavedAt)
-                .ToListAsync();
+                    .Include(favorite =>
+                        favorite.TransportRoute)
 
-            var favoriteRouteIds = favoriteRoutes
-                .Select(f => f.TransportRouteId)
-                .ToHashSet();
+                    .Where(favorite =>
+                        favorite.CustomerKey ==
+                        customerKey)
 
-            ViewBag.From = from;
-            ViewBag.To = to;
-            ViewBag.FavoriteRoutes = favoriteRoutes;
-            ViewBag.FavoriteRouteIds = favoriteRouteIds;
+                    .OrderByDescending(favorite =>
+                        favorite.SavedAt)
+
+                    .ToListAsync();
+
+
+            var favoriteRouteIds =
+                favoriteRoutes
+
+                    .Select(favorite =>
+                        favorite.TransportRouteId)
+
+                    .ToHashSet();
+
+
+            // =====================================================
+            // POPULAR ROUTES
+            // =====================================================
+
+            var popularRoutes =
+                allActiveRoutes
+
+                    .OrderByDescending(route =>
+                        route.Schedules.Count)
+
+                    .ThenByDescending(route =>
+                        route.RouteStops.Count)
+
+                    .ThenBy(route =>
+                        route.RouteName)
+
+                    .Take(3)
+
+                    .ToList();
+
+
+            // =====================================================
+            // LOCATION SUGGESTIONS
+            // =====================================================
+
+            var locationSuggestions =
+                allActiveRoutes
+
+                    .SelectMany(route =>
+                        BuildRoutePointNames(route))
+
+                    .Where(location =>
+                        !string.IsNullOrWhiteSpace(location))
+
+                    .Distinct(
+                        StringComparer.OrdinalIgnoreCase
+                    )
+
+                    .OrderBy(location =>
+                        location)
+
+                    .ToList();
+
+
+            // =====================================================
+            // UPCOMING SCHEDULE STATISTICS
+            // =====================================================
+
+            int upcomingScheduleCount =
+                allActiveRoutes
+
+                    .SelectMany(route =>
+                        route.Schedules)
+
+                    .Count(schedule =>
+                        schedule.ScheduleDate.Date >=
+                            DateTime.Today
+
+                        &&
+                        schedule.Status !=
+                            "Cancelled"
+
+                        &&
+                        schedule.Status !=
+                            "Completed"
+                    );
+
+
+            // =====================================================
+            // VIEW DATA
+            // =====================================================
+
+            ViewBag.From =
+                cleanFrom;
+
+            ViewBag.To =
+                cleanTo;
+
+            ViewBag.SearchPerformed =
+                searchPerformed;
+
+            ViewBag.FavoriteRoutes =
+                favoriteRoutes;
+
+            ViewBag.FavoriteRouteIds =
+                favoriteRouteIds;
+
+            ViewBag.PopularRoutes =
+                popularRoutes;
+
+            ViewBag.LocationSuggestions =
+                locationSuggestions;
+
+            ViewBag.TotalActiveRoutes =
+                allActiveRoutes.Count;
+
+            ViewBag.UpcomingSchedules =
+                upcomingScheduleCount;
+
 
             return View(routes);
         }
 
-        public async Task<IActionResult> Details(int? id)
+
+        // =========================================================
+        // ROUTE DETAILS
+        // =========================================================
+
+        public async Task<IActionResult> Details(
+            int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            string customerKey = GetCustomerKey();
 
-            var route = await _context.TransportRoutes
-                .Include(r => r.RouteStops)
-                .Include(r => r.Schedules)
-                    .ThenInclude(s => s.Driver)
-                .Include(r => r.Schedules)
-                    .ThenInclude(s => s.Vehicle)
-                .AsSplitQuery()
-                .FirstOrDefaultAsync(r =>
-                    r.Id == id &&
-                    r.Status == "Active");
+            string customerKey =
+                GetCustomerKey();
+
+
+            var route =
+                await _context.TransportRoutes
+
+                    .Include(route =>
+                        route.RouteStops)
+
+                    .Include(route =>
+                        route.Schedules)
+
+                        .ThenInclude(schedule =>
+                            schedule.Driver)
+
+                    .Include(route =>
+                        route.Schedules)
+
+                        .ThenInclude(schedule =>
+                            schedule.Vehicle)
+
+                    .AsSplitQuery()
+
+                    .FirstOrDefaultAsync(route =>
+                        route.Id == id
+                        &&
+                        route.Status == "Active"
+                    );
+
 
             if (route == null)
             {
                 return NotFound();
             }
 
-            ViewBag.IsFavorite = await _context.FavoriteRoutes
-                .AnyAsync(f =>
-                    f.CustomerKey == customerKey &&
-                    f.TransportRouteId == route.Id);
+
+            ViewBag.IsFavorite =
+                await _context.FavoriteRoutes
+
+                    .AnyAsync(favorite =>
+                        favorite.CustomerKey ==
+                            customerKey
+
+                        &&
+                        favorite.TransportRouteId ==
+                            route.Id
+                    );
+
 
             return View(route);
         }
+
+
+        // =========================================================
+        // ADD FAVOURITE
+        // =========================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -132,50 +352,107 @@ namespace SRMSS.Web.Controllers
             string? to,
             bool returnToDetails = false)
         {
-            string customerKey = GetCustomerKey();
+            string customerKey =
+                GetCustomerKey();
 
-            var route = await _context.TransportRoutes
-                .FirstOrDefaultAsync(r =>
-                    r.Id == routeId &&
-                    r.Status == "Active");
+
+            var route =
+                await _context.TransportRoutes
+
+                    .FirstOrDefaultAsync(route =>
+                        route.Id == routeId
+                        &&
+                        route.Status == "Active"
+                    );
+
 
             if (route == null)
             {
-                TempData["ErrorMessage"] = "Route could not be found.";
-                return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
+                TempData["ErrorMessage"] =
+                    "Route could not be found.";
+
+                return RedirectAfterFavoriteAction(
+                    routeId,
+                    from,
+                    to,
+                    returnToDetails
+                );
             }
 
-            bool alreadySaved = await _context.FavoriteRoutes
-                .AnyAsync(f =>
-                    f.CustomerKey == customerKey &&
-                    f.TransportRouteId == routeId);
+
+            bool alreadySaved =
+                await _context.FavoriteRoutes
+
+                    .AnyAsync(favorite =>
+                        favorite.CustomerKey ==
+                            customerKey
+
+                        &&
+                        favorite.TransportRouteId ==
+                            routeId
+                    );
+
 
             if (alreadySaved)
             {
-                TempData["ErrorMessage"] = "This route is already saved in favorites.";
-                return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
+                TempData["ErrorMessage"] =
+                    "This route is already saved in your favourites.";
+
+                return RedirectAfterFavoriteAction(
+                    routeId,
+                    from,
+                    to,
+                    returnToDetails
+                );
             }
 
-            var favoriteRoute = new FavoriteRoute
-            {
-                CustomerKey = customerKey,
-                TransportRouteId = routeId,
-                SavedAt = DateTime.Now
-            };
 
-            _context.FavoriteRoutes.Add(favoriteRoute);
+            var favoriteRoute =
+                new FavoriteRoute
+                {
+                    CustomerKey =
+                        customerKey,
+
+                    TransportRouteId =
+                        routeId,
+
+                    SavedAt =
+                        DateTime.Now
+                };
+
+
+            _context.FavoriteRoutes.Add(
+                favoriteRoute
+            );
+
+
             await _context.SaveChangesAsync();
+
 
             await _auditLogService.LogAsync(
                 "Add Favorite Route",
                 "FavoriteRoutes",
                 favoriteRoute.Id,
-                $"Saved route {route.RouteName} to customer favorites"
+                $"Saved route {route.RouteName} to customer favourites"
             );
 
-            TempData["SuccessMessage"] = "Route saved to favorites successfully.";
-            return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
+
+            TempData["SuccessMessage"] =
+                $"{route.RouteName} was saved to your favourites.";
+
+
+            return RedirectAfterFavoriteAction(
+                routeId,
+                from,
+                to,
+                returnToDetails
+            );
         }
+
+
+        // =========================================================
+        // REMOVE FAVOURITE
+        // =========================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -185,35 +462,287 @@ namespace SRMSS.Web.Controllers
             string? to,
             bool returnToDetails = false)
         {
-            string customerKey = GetCustomerKey();
+            string customerKey =
+                GetCustomerKey();
 
-            var favoriteRoute = await _context.FavoriteRoutes
-                .Include(f => f.TransportRoute)
-                .FirstOrDefaultAsync(f =>
-                    f.CustomerKey == customerKey &&
-                    f.TransportRouteId == routeId);
+
+            var favoriteRoute =
+                await _context.FavoriteRoutes
+
+                    .Include(favorite =>
+                        favorite.TransportRoute)
+
+                    .FirstOrDefaultAsync(favorite =>
+                        favorite.CustomerKey ==
+                            customerKey
+
+                        &&
+                        favorite.TransportRouteId ==
+                            routeId
+                    );
+
 
             if (favoriteRoute == null)
             {
-                TempData["ErrorMessage"] = "This route is not currently saved in favorites.";
-                return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
+                TempData["ErrorMessage"] =
+                    "This route is not currently saved in your favourites.";
+
+                return RedirectAfterFavoriteAction(
+                    routeId,
+                    from,
+                    to,
+                    returnToDetails
+                );
             }
 
-            string routeName = favoriteRoute.TransportRoute?.RouteName ?? $"Route #{routeId}";
 
-            _context.FavoriteRoutes.Remove(favoriteRoute);
+            string routeName =
+                favoriteRoute.TransportRoute?.RouteName
+                ?? $"Route #{routeId}";
+
+
+            _context.FavoriteRoutes.Remove(
+                favoriteRoute
+            );
+
+
             await _context.SaveChangesAsync();
+
 
             await _auditLogService.LogAsync(
                 "Remove Favorite Route",
                 "FavoriteRoutes",
                 favoriteRoute.Id,
-                $"Removed {routeName} from customer favorites"
+                $"Removed {routeName} from customer favourites"
             );
 
-            TempData["SuccessMessage"] = "Route removed from favorites successfully.";
-            return RedirectAfterFavoriteAction(routeId, from, to, returnToDetails);
+
+            TempData["SuccessMessage"] =
+                $"{routeName} was removed from your favourites.";
+
+
+            return RedirectAfterFavoriteAction(
+                routeId,
+                from,
+                to,
+                returnToDetails
+            );
         }
+
+
+        // =========================================================
+        // SEARCH HELPERS
+        // =========================================================
+
+        private bool MatchesJourney(
+            TransportRoute route,
+            string from,
+            string to)
+        {
+            var routePoints =
+                BuildRoutePointNames(route);
+
+
+            if (
+                string.IsNullOrWhiteSpace(from)
+                &&
+                string.IsNullOrWhiteSpace(to)
+            )
+            {
+                return true;
+            }
+
+
+            // Search only From location.
+            if (
+                !string.IsNullOrWhiteSpace(from)
+                &&
+                string.IsNullOrWhiteSpace(to)
+            )
+            {
+                return routePoints.Any(point =>
+                    LocationMatches(
+                        point,
+                        from
+                    )
+                );
+            }
+
+
+            // Search only To location.
+            if (
+                string.IsNullOrWhiteSpace(from)
+                &&
+                !string.IsNullOrWhiteSpace(to)
+            )
+            {
+                return routePoints.Any(point =>
+                    LocationMatches(
+                        point,
+                        to
+                    )
+                );
+            }
+
+
+            // Both From and To are supplied.
+            // Destination must appear after the departure point.
+
+            for (
+                int fromIndex = 0;
+                fromIndex < routePoints.Count;
+                fromIndex++
+            )
+            {
+                if (
+                    !LocationMatches(
+                        routePoints[fromIndex],
+                        from
+                    )
+                )
+                {
+                    continue;
+                }
+
+
+                for (
+                    int toIndex =
+                        fromIndex + 1;
+
+                    toIndex <
+                        routePoints.Count;
+
+                    toIndex++
+                )
+                {
+                    if (
+                        LocationMatches(
+                            routePoints[toIndex],
+                            to
+                        )
+                    )
+                    {
+                        return true;
+                    }
+                }
+            }
+
+
+            return false;
+        }
+
+
+        private List<string> BuildRoutePointNames(
+            TransportRoute route)
+        {
+            var points =
+                new List<string>();
+
+
+            AddUniquePoint(
+                points,
+                route.StartPoint
+            );
+
+
+            if (route.RouteStops != null)
+            {
+                foreach (
+                    var stop in
+                    route.RouteStops
+                        .OrderBy(stop =>
+                            stop.StopOrder)
+                )
+                {
+                    AddUniquePoint(
+                        points,
+                        stop.StopName
+                    );
+                }
+            }
+
+
+            AddUniquePoint(
+                points,
+                route.EndPoint
+            );
+
+
+            return points;
+        }
+
+
+        private void AddUniquePoint(
+            List<string> points,
+            string? location)
+        {
+            if (string.IsNullOrWhiteSpace(location))
+            {
+                return;
+            }
+
+
+            string cleanLocation =
+                location.Trim();
+
+
+            bool alreadyExists =
+                points.Any(existing =>
+                    string.Equals(
+                        existing,
+                        cleanLocation,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                );
+
+
+            if (!alreadyExists)
+            {
+                points.Add(cleanLocation);
+            }
+        }
+
+
+        private bool LocationMatches(
+            string routeLocation,
+            string searchLocation)
+        {
+            if (
+                string.IsNullOrWhiteSpace(routeLocation)
+                ||
+                string.IsNullOrWhiteSpace(searchLocation)
+            )
+            {
+                return false;
+            }
+
+
+            string routeValue =
+                routeLocation.Trim();
+
+
+            string searchValue =
+                searchLocation.Trim();
+
+
+            return
+                routeValue.Contains(
+                    searchValue,
+                    StringComparison.OrdinalIgnoreCase
+                )
+
+                ||
+
+                searchValue.Contains(
+                    routeValue,
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
+
+
+        // =========================================================
+        // REDIRECT AFTER FAVOURITE ACTION
+        // =========================================================
 
         private IActionResult RedirectAfterFavoriteAction(
             int routeId,
@@ -223,10 +752,24 @@ namespace SRMSS.Web.Controllers
         {
             if (returnToDetails)
             {
-                return RedirectToAction(nameof(Details), new { id = routeId });
+                return RedirectToAction(
+                    nameof(Details),
+                    new
+                    {
+                        id = routeId
+                    }
+                );
             }
 
-            return RedirectToAction(nameof(Index), new { from, to });
+
+            return RedirectToAction(
+                nameof(Index),
+                new
+                {
+                    from,
+                    to
+                }
+            );
         }
     }
 }

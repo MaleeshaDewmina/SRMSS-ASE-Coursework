@@ -68,7 +68,8 @@ namespace SRMSS.Web.Controllers
                 FavoriteRoutes = currentUserId.HasValue
                     ? await _context.FavoriteRoutes
                         .CountAsync(f =>
-                            f.CustomerKey == currentUserId.Value.ToString())
+                            f.CustomerKey ==
+                            $"CUSTOMER:{currentUserId.Value}")
                     : 0,
 
                 ActiveTrips = await _context.Schedules
