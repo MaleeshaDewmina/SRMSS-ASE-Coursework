@@ -4,7 +4,20 @@
 @{
     ViewData["Title"] = "Schedule Management";
     ViewData["PageTitle"] = "Schedule Management";
-    ViewData["PageSubtitle"] = "Manage route schedules, trip status, driver allocation and vehicle allocation.";
+
+    string currentRole = Context.Session.GetString("Role") ?? string.Empty;
+
+    bool canManageEmergencyAdjustments =
+        currentRole == "SuperAdmin" ||
+        currentRole == "Admin";
+
+    bool canDeleteSchedules =
+        currentRole == "SuperAdmin" ||
+        currentRole == "Admin";
+
+    ViewData["PageSubtitle"] = currentRole == "User"
+        ? "Create schedules, update trip status and manage daily transport operations."
+        : "Manage route schedules, trip status, driver allocation and vehicle allocation.";
 
     var totalSchedules = Model.Count();
     var scheduledTrips = Model.Count(s => s.Status == "Scheduled");
@@ -236,7 +249,11 @@
 
                                     <a asp-action="Details" asp-route-id="@schedule.Id" class="action-link">Details</a>
                                     <a asp-action="Edit" asp-route-id="@schedule.Id" class="action-link">Edit</a>
-                                    <a asp-action="Delete" asp-route-id="@schedule.Id" class="action-link danger">Delete</a>
+
+                                    @if (canDeleteSchedules)
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@schedule.Id" class="action-link danger">Delete</a>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -272,12 +289,24 @@
             </div>
         </div>
 
-        <div class="smart-note mt-4">
-            <h4>Emergency Adjustment Support</h4>
-            <p>
-                Depot officers can update status and record reasons for delay, maintenance, cancellations or emergency changes.
-            </p>
-        </div>
+        @if (canManageEmergencyAdjustments)
+        {
+            <div class="smart-note mt-4">
+                <h4>Emergency Adjustment Support</h4>
+                <p>
+                    Administrators can update status and record reasons for delays, maintenance, cancellations or emergency changes.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="smart-note mt-4">
+                <h4>Operations Schedule Access</h4>
+                <p>
+                    You can create schedules, edit timetable information and update trip status as part of daily depot operations.
+                </p>
+            </div>
+        }
     </div>
 </div>
 
@@ -285,6 +314,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const schedules = @Html.Raw(scheduleDataJson);
+            const canManageEmergencyAdjustments = @canManageEmergencyAdjustments.ToString().ToLowerInvariant();
 
             const tokenInput = document.querySelector("#globalAntiForgeryForm input[name='__RequestVerificationToken']");
             const antiForgeryToken = tokenInput ? tokenInput.value : "";
@@ -383,6 +413,41 @@
                     statusClass = "red";
                 }
 
+                let emergencyAdjustmentHtml = "";
+
+                if (canManageEmergencyAdjustments) {
+                    emergencyAdjustmentHtml = `
+                        <form action="/Schedules/UpdateEmergencyAdjustment"
+                              method="post"
+                              class="emergency-adjustment-form">
+                            <input type="hidden" name="__RequestVerificationToken" value="${antiForgeryToken}" />
+                            <input type="hidden" name="id" value="${schedule.scheduleId}" />
+
+                            <h4>Emergency Adjustment</h4>
+                            <p>Use this for delays, cancellations, maintenance issues or unexpected route changes.</p>
+
+                            <div class="mb-3">
+                                <label class="form-label">New Status</label>
+                                <select name="status" class="form-select">
+                                    ${buildStatusOptions(schedule.status)}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Adjustment Reason</label>
+                                <textarea name="adjustmentNote"
+                                          class="form-control"
+                                          rows="3"
+                                          placeholder="Example: Vehicle maintenance issue. Replacement bus required."></textarea>
+                            </div>
+
+                            <button type="submit" class="srmss-btn primary w-100">
+                                Apply Adjustment
+                            </button>
+                        </form>
+                    `;
+                }
+
                 schedulePreviewArea.innerHTML = `
                     <div class="schedule-preview-card">
                         <div class="schedule-preview-top">
@@ -415,34 +480,7 @@
                             <p>${escapeHtml(schedule.notes).replaceAll("\\n", "<br>")}</p>
                         </div>
 
-                        <form action="/Schedules/UpdateEmergencyAdjustment"
-                              method="post"
-                              class="emergency-adjustment-form">
-                            <input type="hidden" name="__RequestVerificationToken" value="${antiForgeryToken}" />
-                            <input type="hidden" name="id" value="${schedule.scheduleId}" />
-
-                            <h4>Emergency Adjustment</h4>
-                            <p>Use this for delays, cancellations, maintenance issues or unexpected route changes.</p>
-
-                            <div class="mb-3">
-                                <label class="form-label">New Status</label>
-                                <select name="status" class="form-select">
-                                    ${buildStatusOptions(schedule.status)}
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Adjustment Reason</label>
-                                <textarea name="adjustmentNote"
-                                          class="form-control"
-                                          rows="3"
-                                          placeholder="Example: Vehicle maintenance issue. Replacement bus required."></textarea>
-                            </div>
-
-                            <button type="submit" class="srmss-btn primary w-100">
-                                Apply Adjustment
-                            </button>
-                        </form>
+                        ${emergencyAdjustmentHtml}
                     </div>
                 `;
 

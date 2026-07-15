@@ -7,8 +7,13 @@
 
     var selectedStatus = ViewBag.SelectedStatus as string ?? "All";
     var searchValue = ViewBag.Search as string;
-    var currentRole = Context.Session.GetString(SessionKeys.Role) ?? string.Empty;
-    var canUpdateStatus = currentRole == "SuperAdmin" || currentRole == "Admin";
+
+    string currentRole = Context.Session.GetString("Role") ?? string.Empty;
+
+    bool canUpdateStatus =
+        currentRole == "SuperAdmin" ||
+        currentRole == "Admin" ||
+        currentRole == "User";
 }
 
 <div class="trip-status-hero">
@@ -37,6 +42,13 @@
 {
     <div class="alert alert-success srmss-alert">
         @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger srmss-alert">
+        @TempData["ErrorMessage"]
     </div>
 }
 
@@ -89,7 +101,7 @@
             <input name="search"
                    value="@searchValue"
                    class="form-control"
-                   placeholder="Example: Colombo, Badulla, driver name, vehicle number" />
+                   placeholder="Example: Colombo, Kandy, driver name, vehicle number" />
         </div>
 
         <div>
@@ -122,7 +134,7 @@
 <div class="srmss-card">
     <h3 class="card-title">Trip Status List</h3>
     <p class="card-subtitle">
-        @(canUpdateStatus ? "Update trip status directly from the operation board." : "View current operational trip status in real time.")
+        @(canUpdateStatus ? "Update trip status directly from the operations board." : "View current operational trip status in real time.")
     </p>
 
     <div class="table-responsive">
@@ -151,21 +163,21 @@
                             <td>@schedule.ScheduleDate.ToString("dd MMM yyyy")</td>
 
                             <td>
-                                <strong>@schedule.TransportRoute?.RouteName</strong>
+                                <strong>@(schedule.TransportRoute?.RouteName ?? "Unknown Route")</strong>
                                 <small class="d-block text-muted">
-                                    @schedule.TransportRoute?.StartPoint → @schedule.TransportRoute?.EndPoint
+                                    @(schedule.TransportRoute?.StartPoint ?? "Unknown") → @(schedule.TransportRoute?.EndPoint ?? "Unknown")
                                 </small>
                             </td>
 
                             <td>
-                                @schedule.DepartureTime.ToString(@"hh\:mm")
+                                @(schedule.DepartureTime.ToString(@"hh\:mm"))
                                 -
-                                @schedule.ArrivalTime.ToString(@"hh\:mm")
+                                @(schedule.ArrivalTime.ToString(@"hh\:mm"))
                             </td>
 
-                            <td>@schedule.Driver?.FullName</td>
+                            <td>@(schedule.Driver?.FullName ?? "Not assigned")</td>
 
-                            <td>@schedule.Vehicle?.RegistrationNumber</td>
+                            <td>@(schedule.Vehicle?.RegistrationNumber ?? "Not assigned")</td>
 
                             <td>
                                 @if (schedule.Status == "Delayed")
@@ -183,6 +195,10 @@
                                 else if (schedule.Status == "Departed")
                                 {
                                     <span class="status-pill purple">Departed</span>
+                                }
+                                else if (schedule.Status == "Scheduled")
+                                {
+                                    <span class="status-pill blue">Scheduled</span>
                                 }
                                 else
                                 {

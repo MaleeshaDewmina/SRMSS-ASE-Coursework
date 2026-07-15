@@ -4,7 +4,16 @@
 @{
     ViewData["Title"] = "Route Stops";
     ViewData["PageTitle"] = "Route Stops";
-    ViewData["PageSubtitle"] = "View each route and manage its ordered stop flow.";
+
+    string currentRole = Context.Session.GetString("Role") ?? string.Empty;
+
+    bool canManageStops =
+        currentRole == "SuperAdmin" ||
+        currentRole == "Admin";
+
+    ViewData["PageSubtitle"] = canManageStops
+        ? "View each route and manage its ordered stop flow."
+        : "View transport routes and their ordered stop flow.";
 
     var totalRoutes = Model.Count();
     var totalStops = Model.Sum(r => r.RouteStops.Count);
@@ -56,11 +65,14 @@
     <div class="alert alert-danger srmss-alert">@TempData["ErrorMessage"]</div>
 }
 
-<div class="d-flex justify-content-end mb-4">
-    <a asp-action="Create" class="srmss-btn primary">
-        + Add Route Stop
-    </a>
-</div>
+@if (canManageStops)
+{
+    <div class="d-flex justify-content-end mb-4">
+        <a asp-action="Create" class="srmss-btn primary">
+            + Add Route Stop
+        </a>
+    </div>
+}
 
 <div class="metric-grid">
     <div class="metric-card">
@@ -185,8 +197,21 @@
                                             View Stops
                                         </button>
 
-                                        <a asp-action="Create" class="action-link">Add Stop</a>
-                                        <a asp-controller="TransportRoutes" asp-action="Edit" asp-route-id="@route.routeId" class="action-link">Edit Route</a>
+                                        @if (canManageStops)
+                                        {
+                                            <a asp-action="Create"
+                                               asp-route-transportRouteId="@route.routeId"
+                                               class="action-link">
+                                                Add Stop
+                                            </a>
+
+                                            <a asp-controller="TransportRoutes"
+                                               asp-action="Edit"
+                                               asp-route-id="@route.routeId"
+                                               class="action-link">
+                                                Edit Route
+                                            </a>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -231,6 +256,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const routes = @Html.Raw(routeGroupsJson);
+            const canManageStops = @canManageStops.ToString().ToLowerInvariant();
 
             const searchInput = document.getElementById("routeSearchInput");
             const statusFilter = document.getElementById("statusFilterSelect");
@@ -315,18 +341,27 @@
                     route.stops.forEach(function (stop, index) {
                         const activeClass = index === 0 ? "active" : "";
 
+                        let stopActions = `
+                            <div class="stop-action-links">
+                                <a href="/RouteStops/Details/${stop.stopId}">Details</a>
+                        `;
+
+                        if (canManageStops) {
+                            stopActions += `
+                                <a href="/RouteStops/Edit/${stop.stopId}">Edit</a>
+                                <a class="danger" href="/RouteStops/Delete/${stop.stopId}">Delete</a>
+                            `;
+                        }
+
+                        stopActions += `</div>`;
+
                         html += `
                             <div class="detailed-stop-item ${activeClass}">
                                 <div class="detailed-stop-dot">${stop.stopOrder}</div>
                                 <div class="detailed-stop-content">
                                     <strong>${stop.stopName}</strong>
                                     <small>${stop.estimatedMinutes} mins from start</small>
-
-                                    <div class="stop-action-links">
-                                        <a href="/RouteStops/Edit/${stop.stopId}">Edit</a>
-                                        <a href="/RouteStops/Details/${stop.stopId}">Details</a>
-                                        <a class="danger" href="/RouteStops/Delete/${stop.stopId}">Delete</a>
-                                    </div>
+                                    ${stopActions}
                                 </div>
                             </div>
                         `;
