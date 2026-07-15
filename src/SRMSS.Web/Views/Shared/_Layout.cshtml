@@ -60,9 +60,20 @@
 
     <title>@ViewData["Title"] - SRMSS</title>
 
+
+    <!-- Bootstrap -->
     <link rel="stylesheet"
           href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
+
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+
+
+    <!-- Main Site CSS -->
     <link rel="stylesheet"
           href="~/css/site.css"
           asp-append-version="true" />
@@ -90,8 +101,12 @@
                 <div class="sidebar-brand">
 
                     <div class="brand-mark brand-mark-logo">
-                        <img src="~/images/srmss-mark.png" alt="SRMSS" />
+
+                        <img src="~/images/srmss-mark.png"
+                             alt="SRMSS" />
+
                     </div>
+
 
                     <div class="brand-copy">
 
@@ -104,6 +119,7 @@
                         </small>
 
                     </div>
+
 
                     <button type="button"
                             class="sidebar-collapse-btn"
@@ -149,7 +165,8 @@
                        class="modern-nav-link @(string.Equals(currentController, "Dashboard", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                         <span class="nav-icon">
-                            <partial name="_AppIcon" model='"dashboard"' />
+                            <partial name="_AppIcon"
+                                     model='"dashboard"' />
                         </span>
 
                         <span class="nav-text">
@@ -163,7 +180,8 @@
                        class="modern-nav-link @(string.Equals(currentController, "Account", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Profile", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                         <span class="nav-icon">
-                            <partial name="_AppIcon" model='"profile"' />
+                            <partial name="_AppIcon"
+                                     model='"profile"' />
                         </span>
 
                         <span class="nav-text">
@@ -184,7 +202,10 @@
                            class="modern-nav-link @(string.Equals(currentController, "Users", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                             <span class="nav-icon">
-                                <partial name="_AppIcon" model='"users"' />
+
+                                <partial name="_AppIcon"
+                                         model='"users"' />
+
                             </span>
 
                             <span class="nav-text">
@@ -198,7 +219,10 @@
                            class="modern-nav-link @(string.Equals(currentController, "AuditLogs", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                             <span class="nav-icon">
-                                <partial name="_AppIcon" model='"audit"' />
+
+                                <partial name="_AppIcon"
+                                         model='"audit"' />
+
                             </span>
 
                             <span class="nav-text">
@@ -209,7 +233,11 @@
                     }
 
 
-                    @if (role == "SuperAdmin" || role == "Admin")
+                    @if (
+                        role == "SuperAdmin" ||
+                        role == "Admin" ||
+                        role == "User"
+                    )
                     {
                         <div class="nav-section-label">
                             Operations
@@ -220,7 +248,10 @@
                            class="modern-nav-link @(string.Equals(currentController, "TransportRoutes", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                             <span class="nav-icon">
-                                <partial name="_AppIcon" model='"route"' />
+
+                                <partial name="_AppIcon"
+                                         model='"route"' />
+
                             </span>
 
                             <span class="nav-text">
@@ -234,7 +265,10 @@
                            class="modern-nav-link @(string.Equals(currentController, "RouteStops", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                             <span class="nav-icon">
-                                <partial name="_AppIcon" model='"stop"' />
+
+                                <partial name="_AppIcon"
+                                         model='"stop"' />
+
                             </span>
 
                             <span class="nav-text">
@@ -248,7 +282,10 @@
                            class="modern-nav-link @(string.Equals(currentController, "Schedules", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                             <span class="nav-icon">
-                                <partial name="_AppIcon" model='"schedule"' />
+
+                                <partial name="_AppIcon"
+                                         model='"schedule"' />
+
                             </span>
 
                             <span class="nav-text">
@@ -262,29 +299,10 @@
                            class="modern-nav-link @(string.Equals(currentController, "TripStatus", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                             <span class="nav-icon">
-                                <partial name="_AppIcon" model='"trip"' />
-                            </span>
 
-                            <span class="nav-text">
-                                Trip Status
-                            </span>
+                                <partial name="_AppIcon"
+                                         model='"trip"' />
 
-                        </a>
-                    }
-
-
-                    @if (role == "User")
-                    {
-                        <div class="nav-section-label">
-                            Operations
-                        </div>
-
-
-                        <a href="/TripStatus"
-                           class="modern-nav-link @(string.Equals(currentController, "TripStatus", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
-
-                            <span class="nav-icon">
-                                <partial name="_AppIcon" model='"trip"' />
                             </span>
 
                             <span class="nav-text">
@@ -306,7 +324,10 @@
                            class="modern-nav-link @(string.Equals(currentController, "CustomerRoutes", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
 
                             <span class="nav-icon">
-                                <partial name="_AppIcon" model='"route"' />
+
+                                <partial name="_AppIcon"
+                                         model='"route"' />
+
                             </span>
 
                             <span class="nav-text">
@@ -325,6 +346,7 @@
                         @initials
                     </div>
 
+
                     <div class="profile-copy">
 
                         <strong>
@@ -337,11 +359,13 @@
 
                     </div>
 
+
                     <a href="/Account/Logout"
                        class="sidebar-logout"
                        title="Logout">
 
-                        <partial name="_AppIcon" model='"logout"' />
+                        <partial name="_AppIcon"
+                                 model='"logout"' />
 
                     </a>
 
@@ -361,7 +385,8 @@
                                 id="mobileMenuBtn"
                                 aria-label="Open menu">
 
-                            <partial name="_AppIcon" model='"menu"' />
+                            <partial name="_AppIcon"
+                                     model='"menu"' />
 
                         </button>
 
@@ -399,7 +424,10 @@
                                 title="System notifications">
 
                             <span>
-                                <partial name="_AppIcon" model='"bell"' />
+
+                                <partial name="_AppIcon"
+                                         model='"bell"' />
+
                             </span>
 
                             <i class="notification-pulse"></i>
@@ -413,7 +441,10 @@
                                 title="Toggle theme">
 
                             <span id="themeIcon">
-                                <partial name="_AppIcon" model='"moon"' />
+
+                                <partial name="_AppIcon"
+                                         model='"moon"' />
+
                             </span>
 
                         </button>
@@ -425,6 +456,7 @@
                             <div class="topbar-avatar">
                                 @initials
                             </div>
+
 
                             <div class="topbar-user-copy">
 
@@ -457,9 +489,18 @@
     }
 
 
+    <!-- jQuery -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
+
+    <!-- Bootstrap -->
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <!-- Leaflet Map JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
 
 
     <script>
@@ -487,46 +528,72 @@
                 document.getElementById("themeIcon");
 
 
-            // Desktop sidebar collapse
+            // =============================================
+            // DESKTOP SIDEBAR
+            // =============================================
+
             if (collapseButton && shell) {
 
                 const storedSidebarState =
-                    localStorage.getItem("srmss-sidebar-collapsed");
-
-                if (storedSidebarState === "true") {
-                    shell.classList.add("sidebar-collapsed");
-                }
-
-                collapseButton.addEventListener("click", function () {
-
-                    shell.classList.toggle(
-                        "sidebar-collapsed"
+                    localStorage.getItem(
+                        "srmss-sidebar-collapsed"
                     );
 
-                    const collapsed =
-                        shell.classList.contains(
+
+                if (storedSidebarState === "true") {
+
+                    shell.classList.add(
+                        "sidebar-collapsed"
+                    );
+                }
+
+
+                collapseButton.addEventListener(
+                    "click",
+                    function () {
+
+                        shell.classList.toggle(
                             "sidebar-collapsed"
                         );
 
-                    localStorage.setItem(
-                        "srmss-sidebar-collapsed",
-                        collapsed
-                    );
 
-                });
+                        const collapsed =
+                            shell.classList.contains(
+                                "sidebar-collapsed"
+                            );
+
+
+                        localStorage.setItem(
+                            "srmss-sidebar-collapsed",
+                            collapsed
+                        );
+
+                    }
+                );
             }
 
 
-            // Mobile menu
+            // =============================================
+            // MOBILE SIDEBAR
+            // =============================================
+
             function closeMobileMenu() {
 
                 if (sidebar) {
-                    sidebar.classList.remove("mobile-open");
+
+                    sidebar.classList.remove(
+                        "mobile-open"
+                    );
                 }
 
+
                 if (mobileOverlay) {
-                    mobileOverlay.classList.remove("show");
+
+                    mobileOverlay.classList.remove(
+                        "show"
+                    );
                 }
+
 
                 document.body.classList.remove(
                     "menu-open"
@@ -544,9 +611,11 @@
                             "mobile-open"
                         );
 
+
                         mobileOverlay?.classList.toggle(
                             "show"
                         );
+
 
                         document.body.classList.toggle(
                             "menu-open"
@@ -575,15 +644,20 @@
                 });
 
 
-            // Dark and light theme
+            // =============================================
+            // DARK AND LIGHT THEME
+            // =============================================
+
             const savedTheme =
                 localStorage.getItem("srmss-theme")
                 ?? "light";
+
 
             document.documentElement.setAttribute(
                 "data-theme",
                 savedTheme
             );
+
 
             updateThemeIcon(savedTheme);
 
@@ -594,9 +668,12 @@
                     return;
                 }
 
+
                 themeIcon.innerHTML =
                     theme === "dark"
+
                         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>'
+
                         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z"/></svg>';
             }
 
@@ -610,36 +687,51 @@
                             "data-theme"
                         );
 
+
                     const nextTheme =
                         currentTheme === "dark"
                             ? "light"
                             : "dark";
+
 
                     document.documentElement.setAttribute(
                         "data-theme",
                         nextTheme
                     );
 
+
                     localStorage.setItem(
                         "srmss-theme",
                         nextTheme
                     );
 
+
                     updateThemeIcon(nextTheme);
 
-                });
+                }
+            );
 
 
-            // Live date and clock
+            // =============================================
+            // LIVE CLOCK
+            // =============================================
+
             function updateClock() {
 
-                const now = new Date();
+                const now =
+                    new Date();
+
 
                 const dateElement =
-                    document.getElementById("currentDate");
+                    document.getElementById(
+                        "currentDate"
+                    );
+
 
                 const timeElement =
-                    document.getElementById("currentTime");
+                    document.getElementById(
+                        "currentTime"
+                    );
 
 
                 if (dateElement) {
@@ -671,6 +763,7 @@
 
 
             updateClock();
+
 
             setInterval(
                 updateClock,

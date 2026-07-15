@@ -7,7 +7,7 @@ using SRMSS.Web.Services;
 
 namespace SRMSS.Web.Controllers
 {
-    [RoleAuthorize("SuperAdmin", "Admin")]
+    [RoleAuthorize("SuperAdmin", "Admin", "User")]
     public class TransportRoutesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -21,6 +21,12 @@ namespace SRMSS.Web.Controllers
             _auditLogService = auditLogService;
         }
 
+
+        // =========================================================
+        // VIEW ROUTES
+        // SuperAdmin, Admin and User
+        // =========================================================
+
         public async Task<IActionResult> Index()
         {
             var routes = await _context.TransportRoutes
@@ -30,6 +36,12 @@ namespace SRMSS.Web.Controllers
 
             return View(routes);
         }
+
+
+        // =========================================================
+        // VIEW ROUTE DETAILS
+        // SuperAdmin, Admin and User
+        // =========================================================
 
         public async Task<IActionResult> Details(int? id)
         {
@@ -50,15 +62,33 @@ namespace SRMSS.Web.Controllers
             return View(transportRoute);
         }
 
+
+        // =========================================================
+        // CREATE ROUTE
+        // SuperAdmin and Admin only
+        // =========================================================
+
+        [RoleAuthorize("SuperAdmin", "Admin")]
         public IActionResult Create()
         {
             return View();
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RoleAuthorize("SuperAdmin", "Admin")]
         public async Task<IActionResult> Create(
-            [Bind("Id,RouteName,StartPoint,EndPoint,DistanceKm,EstimatedDurationMinutes,ServiceType,Status")]
+            [Bind(
+                "Id," +
+                "RouteName," +
+                "StartPoint," +
+                "EndPoint," +
+                "DistanceKm," +
+                "EstimatedDurationMinutes," +
+                "ServiceType," +
+                "Status"
+            )]
             TransportRoute transportRoute)
         {
             if (!ModelState.IsValid)
@@ -67,19 +97,30 @@ namespace SRMSS.Web.Controllers
             }
 
             _context.TransportRoutes.Add(transportRoute);
+
             await _context.SaveChangesAsync();
 
             await _auditLogService.LogAsync(
                 "Create Route",
                 "TransportRoutes",
                 transportRoute.Id,
-                $"Created route {transportRoute.RouteName}: {transportRoute.StartPoint} to {transportRoute.EndPoint}"
+                $"Created route {transportRoute.RouteName}: " +
+                $"{transportRoute.StartPoint} to {transportRoute.EndPoint}"
             );
 
-            TempData["SuccessMessage"] = "Route created successfully.";
+            TempData["SuccessMessage"] =
+                "Route created successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 
+
+        // =========================================================
+        // EDIT ROUTE
+        // SuperAdmin and Admin only
+        // =========================================================
+
+        [RoleAuthorize("SuperAdmin", "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -99,11 +140,22 @@ namespace SRMSS.Web.Controllers
             return View(transportRoute);
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RoleAuthorize("SuperAdmin", "Admin")]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Id,RouteName,StartPoint,EndPoint,DistanceKm,EstimatedDurationMinutes,ServiceType,Status")]
+            [Bind(
+                "Id," +
+                "RouteName," +
+                "StartPoint," +
+                "EndPoint," +
+                "DistanceKm," +
+                "EstimatedDurationMinutes," +
+                "ServiceType," +
+                "Status"
+            )]
             TransportRoute transportRoute)
         {
             if (id != transportRoute.Id)
@@ -119,6 +171,7 @@ namespace SRMSS.Web.Controllers
             try
             {
                 _context.TransportRoutes.Update(transportRoute);
+
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -135,13 +188,23 @@ namespace SRMSS.Web.Controllers
                 "Update Route",
                 "TransportRoutes",
                 transportRoute.Id,
-                $"Updated route {transportRoute.RouteName}: {transportRoute.StartPoint} to {transportRoute.EndPoint}"
+                $"Updated route {transportRoute.RouteName}: " +
+                $"{transportRoute.StartPoint} to {transportRoute.EndPoint}"
             );
 
-            TempData["SuccessMessage"] = "Route updated successfully.";
+            TempData["SuccessMessage"] =
+                "Route updated successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 
+
+        // =========================================================
+        // DELETE ROUTE
+        // SuperAdmin and Admin only
+        // =========================================================
+
+        [RoleAuthorize("SuperAdmin", "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -161,8 +224,11 @@ namespace SRMSS.Web.Controllers
             return View(transportRoute);
         }
 
-        [HttpPost, ActionName("Delete")]
+
+        [HttpPost]
+        [ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [RoleAuthorize("SuperAdmin", "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var transportRoute = await _context.TransportRoutes
@@ -176,13 +242,17 @@ namespace SRMSS.Web.Controllers
 
             if (transportRoute.Schedules.Any())
             {
-                TempData["ErrorMessage"] = "This route cannot be deleted because schedules are assigned to it. Remove or reassign those schedules first.";
+                TempData["ErrorMessage"] =
+                    "This route cannot be deleted because schedules are assigned to it. " +
+                    "Remove or reassign those schedules first.";
+
                 return RedirectToAction(nameof(Index));
             }
 
             string routeName = transportRoute.RouteName;
 
             _context.TransportRoutes.Remove(transportRoute);
+
             await _context.SaveChangesAsync();
 
             await _auditLogService.LogAsync(
@@ -192,13 +262,18 @@ namespace SRMSS.Web.Controllers
                 $"Deleted route {routeName}"
             );
 
-            TempData["SuccessMessage"] = "Route deleted successfully.";
+            TempData["SuccessMessage"] =
+                "Route deleted successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 
+
         private bool TransportRouteExists(int id)
         {
-            return _context.TransportRoutes.Any(r => r.Id == id);
+            return _context.TransportRoutes.Any(
+                r => r.Id == id
+            );
         }
     }
 }
