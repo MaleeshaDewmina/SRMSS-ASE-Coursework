@@ -1,4 +1,4 @@
-@using System.Text.Json
+﻿@using System.Text.Json
 @model SRMSS.Web.Models.TransportRoute
 
 @{
@@ -3621,8 +3621,7 @@
 
                     <div class="journey-next-departure-date">
 
-                        @nextSchedule.ScheduleDate
-                            .ToString("dddd, dd MMMM yyyy")
+                        @(nextSchedule.ScheduleDate.ToString("dddd, dd MMMM yyyy"))
 
                     </div>
 
@@ -3632,7 +3631,7 @@
                         @(nextSchedule.DepartureTime.ToString(@"hh\:mm"))
 
                         <span>
-                            →
+                            &rarr;
                         </span>
 
                         @(nextSchedule.ArrivalTime.ToString(@"hh\:mm"))
@@ -3800,8 +3799,7 @@
 
                             <strong>
 
-                                @schedule.ScheduleDate
-                                    .ToString("dd MMM yyyy")
+                                @schedule.ScheduleDate.ToString("dd MMM yyyy")
 
                             </strong>
 
@@ -3829,7 +3827,7 @@
 
 
                                 <div class="journey-time-arrow">
-                                    →
+                                    &rarr;
                                 </div>
 
 
@@ -4921,3 +4919,6 @@
 
     </script>
 }
+
+
+

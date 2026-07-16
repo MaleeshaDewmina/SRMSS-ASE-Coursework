@@ -1,0 +1,164 @@
+﻿@using System.Text.Json
+@model SRMSS.Web.ViewModels.ReportsViewModel
+
+@{
+    ViewData["Title"] = "Operational Reports";
+    ViewData["PageTitle"] = "Operational Reports";
+    ViewData["PageSubtitle"] = "Enterprise analytics for route performance, fleet cost and service reliability.";
+
+    var statusLabels = Model.StatusBreakdown.Select(s => s.Status).ToList();
+    var statusCounts = Model.StatusBreakdown.Select(s => s.Count).ToList();
+    var routeLabels = Model.RoutePerformance.Select(r => r.RouteName).ToList();
+    var routeTrips = Model.RoutePerformance.Select(r => r.TotalTrips).ToList();
+    var costLabels = Model.VehicleCost.Select(v => v.Vehicle).ToList();
+    var fuelCosts = Model.VehicleCost.Select(v => v.FuelCost).ToList();
+    var maintenanceCosts = Model.VehicleCost.Select(v => v.MaintenanceCost).ToList();
+}
+
+<div class="module-hero report-hero">
+    <div>
+        <span class="module-kicker">Business Intelligence</span>
+        <h2>Operational Reports Dashboard</h2>
+        <p>Analyze schedules, trip status, fuel cost, maintenance cost and fleet performance for the selected period.</p>
+    </div>
+</div>
+
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Report Period</h3>
+    <form method="get" class="enterprise-filter-grid">
+        <div>
+            <label class="form-label">From Date</label>
+            <input name="fromDate" value="@Model.FromDate.ToString("yyyy-MM-dd")" type="date" class="form-control" />
+        </div>
+        <div>
+            <label class="form-label">To Date</label>
+            <input name="toDate" value="@Model.ToDate.ToString("yyyy-MM-dd")" type="date" class="form-control" />
+        </div>
+        <div class="filter-button-area">
+            <button type="submit" class="srmss-btn primary w-100">Generate Report</button>
+        </div>
+        <div class="filter-button-area">
+            <button type="button" class="srmss-btn secondary w-100" onclick="window.print()">Print</button>
+        </div>
+    </form>
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><div class="metric-icon">R</div><div><p>Active Routes</p><h3>@Model.ActiveRoutes / @Model.TotalRoutes</h3></div></div>
+    <div class="metric-card"><div class="metric-icon green">T</div><div><p>Completed Trips</p><h3>@Model.CompletedTrips</h3></div></div>
+    <div class="metric-card"><div class="metric-icon amber">D</div><div><p>Delayed Trips</p><h3>@Model.DelayedTrips</h3></div></div>
+    <div class="metric-card"><div class="metric-icon red">C</div><div><p>Cancelled Trips</p><h3>@Model.CancelledTrips</h3></div></div>
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><div class="metric-icon">DR</div><div><p>Available Drivers</p><h3>@Model.AvailableDrivers / @Model.TotalDrivers</h3></div></div>
+    <div class="metric-card"><div class="metric-icon blue">VH</div><div><p>Available Vehicles</p><h3>@Model.AvailableVehicles / @Model.TotalVehicles</h3></div></div>
+    <div class="metric-card"><div class="metric-icon amber">F</div><div><p>Fuel Cost</p><h3>Rs. @Model.FuelCost.ToString("N0")</h3></div></div>
+    <div class="metric-card"><div class="metric-icon red">M</div><div><p>Maintenance Cost</p><h3>Rs. @Model.MaintenanceCost.ToString("N0")</h3></div></div>
+</div>
+
+<div class="analytics-grid">
+    <div class="srmss-card report-chart-card">
+        <h3 class="card-title">Trip Status Breakdown</h3>
+        <canvas id="statusChart"></canvas>
+    </div>
+    <div class="srmss-card report-chart-card">
+        <h3 class="card-title">Top Route Activity</h3>
+        <canvas id="routeChart"></canvas>
+    </div>
+</div>
+
+<div class="srmss-card mt-4 report-chart-card wide">
+    <h3 class="card-title">Vehicle Cost Comparison</h3>
+    <canvas id="costChart"></canvas>
+</div>
+
+<div class="enterprise-detail-grid mt-4">
+    <div class="srmss-card">
+        <h3 class="card-title">Route Performance</h3>
+        <div class="table-responsive">
+            <table class="srmss-table">
+                <thead><tr><th>Route</th><th>Total</th><th>Completed</th><th>Delayed</th><th>Cancelled</th></tr></thead>
+                <tbody>
+                    @if (Model.RoutePerformance.Any())
+                    {
+                        foreach (var row in Model.RoutePerformance)
+                        {
+                            <tr><td>@row.RouteName</td><td>@row.TotalTrips</td><td>@row.CompletedTrips</td><td>@row.DelayedTrips</td><td>@row.CancelledTrips</td></tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-4">No route activity in this period.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="srmss-card">
+        <h3 class="card-title">Vehicle Cost Summary</h3>
+        <div class="table-responsive">
+            <table class="srmss-table">
+                <thead><tr><th>Vehicle</th><th>Fuel</th><th>Maintenance</th><th>Total</th></tr></thead>
+                <tbody>
+                    @if (Model.VehicleCost.Any())
+                    {
+                        foreach (var row in Model.VehicleCost)
+                        {
+                            <tr><td>@row.Vehicle</td><td>Rs. @row.FuelCost.ToString("N0")</td><td>Rs. @row.MaintenanceCost.ToString("N0")</td><td>Rs. @row.TotalCost.ToString("N0")</td></tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" class="text-center text-muted py-4">No vehicle cost records in this period.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const statusLabels = @Html.Raw(JsonSerializer.Serialize(statusLabels));
+            const statusCounts = @Html.Raw(JsonSerializer.Serialize(statusCounts));
+            const routeLabels = @Html.Raw(JsonSerializer.Serialize(routeLabels));
+            const routeTrips = @Html.Raw(JsonSerializer.Serialize(routeTrips));
+            const costLabels = @Html.Raw(JsonSerializer.Serialize(costLabels));
+            const fuelCosts = @Html.Raw(JsonSerializer.Serialize(fuelCosts));
+            const maintenanceCosts = @Html.Raw(JsonSerializer.Serialize(maintenanceCosts));
+
+            if (window.Chart) {
+                new Chart(document.getElementById("statusChart"), {
+                    type: "doughnut",
+                    data: { labels: statusLabels, datasets: [{ data: statusCounts }] },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+
+                new Chart(document.getElementById("routeChart"), {
+                    type: "bar",
+                    data: { labels: routeLabels, datasets: [{ label: "Trips", data: routeTrips }] },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+
+                new Chart(document.getElementById("costChart"), {
+                    type: "bar",
+                    data: {
+                        labels: costLabels,
+                        datasets: [
+                            { label: "Fuel Cost", data: fuelCosts },
+                            { label: "Maintenance Cost", data: maintenanceCosts }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        });
+    </script>
+}
+
+
+

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SRMSS.Web.Data;
 using SRMSS.Web.Filters;
@@ -26,6 +26,102 @@ namespace SRMSS.Web.Controllers
         // =========================================================
         // CUSTOMER KEY
         // =========================================================
+
+        public async Task<IActionResult> Timetable(
+            string? search,
+            DateTime? date
+        )
+        {
+            DateTime selectedDate =
+                date?.Date ?? DateTime.Today;
+
+            var query =
+                _context.Schedules
+                    .Include(s => s.TransportRoute)
+                    .Where(s =>
+                        s.ScheduleDate >= selectedDate
+                        &&
+                        s.TransportRoute != null
+                        &&
+                        s.TransportRoute.Status == "Active"
+                    );
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword =
+                    search.Trim();
+
+                query =
+                    query.Where(s =>
+                        s.TransportRoute != null
+                        &&
+                        (
+                            s.TransportRoute.RouteName.Contains(keyword)
+                            ||
+                            s.TransportRoute.StartPoint.Contains(keyword)
+                            ||
+                            s.TransportRoute.EndPoint.Contains(keyword)
+                        )
+                    );
+            }
+
+            var schedules =
+                await query
+                    .OrderBy(s => s.ScheduleDate)
+                    .ThenBy(s => s.DepartureTime)
+                    .Take(80)
+                    .ToListAsync();
+
+            ViewBag.Search = search;
+            ViewBag.SelectedDate =
+                selectedDate.ToString("yyyy-MM-dd");
+
+            return View(schedules);
+        }
+
+
+        public async Task<IActionResult> LiveStatus(
+            string? status
+        )
+        {
+            DateTime fromDate =
+                DateTime.Today.AddDays(-1);
+
+            DateTime toDate =
+                DateTime.Today.AddDays(2);
+
+            var query =
+                _context.Schedules
+                    .Include(s => s.TransportRoute)
+                    .Where(s =>
+                        s.ScheduleDate >= fromDate
+                        &&
+                        s.ScheduleDate <= toDate
+                        &&
+                        s.TransportRoute != null
+                        &&
+                        s.TransportRoute.Status == "Active"
+                    );
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query =
+                    query.Where(s =>
+                        s.Status == status
+                    );
+            }
+
+            var schedules =
+                await query
+                    .OrderBy(s => s.ScheduleDate)
+                    .ThenBy(s => s.DepartureTime)
+                    .Take(80)
+                    .ToListAsync();
+
+            ViewBag.Status = status;
+
+            return View(schedules);
+        }
 
         private string GetCustomerKey()
         {

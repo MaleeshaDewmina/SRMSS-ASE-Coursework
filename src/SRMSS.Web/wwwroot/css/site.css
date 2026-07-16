@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --primary-navy: #0F172A;
     --sidebar-slate: #1E293B;
     --action-navy: #1E3A8A;
@@ -6552,3 +6552,573 @@ body.dark-mode .feedback-message-box {
 #topbarNotificationButton:hover {
     color: var(--text-primary) !important;
 }
+
+/* =========================
+   CUSTOMER TIMETABLE AND LIVE STATUS
+========================= */
+
+.customer-page-shell {
+    display: grid;
+    gap: 24px;
+}
+
+.customer-hero.compact {
+    min-height: 220px;
+    border-radius: 28px;
+    padding: 38px;
+    background:
+        radial-gradient(circle at top right, rgba(96, 165, 250, 0.28), transparent 32%),
+        linear-gradient(135deg, #07172d, #1e3a8a);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    overflow: hidden;
+    position: relative;
+}
+
+.customer-hero.compact.live {
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 32%),
+        linear-gradient(135deg, #07172d, #164e63);
+}
+
+.hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.13);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    margin-bottom: 16px;
+}
+
+.customer-hero h1 {
+    font-size: clamp(32px, 4vw, 54px);
+    font-weight: 950;
+    margin: 0 0 10px;
+}
+
+.customer-hero p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.78);
+    max-width: 760px;
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.hero-action-btn {
+    background: #ffffff;
+    color: #1e3a8a;
+    border-radius: 18px;
+    padding: 14px 22px;
+    font-weight: 900;
+    white-space: nowrap;
+    text-decoration: none;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+}
+
+.hero-action-btn:hover {
+    color: #1e3a8a;
+    transform: translateY(-2px);
+}
+
+.customer-filter-card {
+    border-left: 7px solid #2563eb;
+}
+
+.customer-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.6fr) minmax(170px, 0.45fr) minmax(150px, 0.4fr);
+    gap: 18px;
+    align-items: end;
+}
+
+.customer-schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.customer-schedule-card {
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 24px;
+    padding: 26px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.customer-schedule-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 24px;
+    bottom: 24px;
+    width: 6px;
+    border-radius: 999px;
+    background: #2563eb;
+}
+
+.schedule-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.schedule-card-top strong {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.customer-schedule-card h3 {
+    font-size: 22px;
+    font-weight: 950;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.customer-schedule-card p {
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.schedule-time-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.schedule-time-row div {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.schedule-time-row span {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+
+.schedule-time-row strong {
+    color: #0f172a;
+    font-size: 24px;
+    font-weight: 950;
+}
+
+.schedule-details-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #eaf2ff;
+    color: #1e3a8a;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.schedule-details-link:hover {
+    background: #1e3a8a;
+    color: #ffffff;
+}
+
+.customer-status-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.status-filter-link {
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    color: #475569;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.status-filter-link.active,
+.status-filter-link:hover {
+    background: #1e3a8a;
+    color: #ffffff;
+}
+
+.empty-customer-state {
+    grid-column: 1 / -1;
+    background: #ffffff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 24px;
+    padding: 46px 30px;
+    text-align: center;
+    color: #64748b;
+}
+
+.empty-customer-state h3 {
+    color: #0f172a;
+    font-weight: 950;
+}
+
+@media (max-width: 1100px) {
+    .customer-filter-grid,
+    .customer-schedule-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-hero.compact {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 576px) {
+    .customer-hero.compact {
+        padding: 28px;
+        border-radius: 22px;
+    }
+
+    .schedule-time-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================
+   ONLY SIDEBAR COLLAPSE SYMBOL FIX
+========================= */
+
+.sidebar-collapse-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.sidebar-collapse-lines {
+    width: 18px !important;
+    height: 14px !important;
+    display: inline-flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    align-items: stretch !important;
+    pointer-events: none !important;
+}
+
+.sidebar-collapse-lines span {
+    display: block !important;
+    width: 100% !important;
+    height: 2px !important;
+    border-radius: 999px !important;
+    background: currentColor !important;
+}
+
+/* =========================
+   COLLAPSED SIDEBAR SPACING FIX
+   Keeps collapsed sidebar clean and not squeezed
+========================= */
+
+/* Support several possible collapsed-state class names safely */
+.modern-sidebar.collapsed,
+.modern-sidebar.sidebar-collapsed,
+body.sidebar-collapsed .modern-sidebar,
+body.sidebar-mini .modern-sidebar {
+    width: 92px !important;
+    min-width: 92px !important;
+    max-width: 92px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+/* Brand area */
+.modern-sidebar.collapsed .brand-text,
+.modern-sidebar.sidebar-collapsed .brand-text,
+body.sidebar-collapsed .modern-sidebar .brand-text,
+body.sidebar-mini .modern-sidebar .brand-text {
+    display: none !important;
+}
+
+.modern-sidebar.collapsed .sidebar-brand,
+.modern-sidebar.sidebar-collapsed .sidebar-brand,
+body.sidebar-collapsed .modern-sidebar .sidebar-brand,
+body.sidebar-mini .modern-sidebar .sidebar-brand {
+    justify-content: center !important;
+    gap: 0 !important;
+}
+
+/* Top status box */
+.modern-sidebar.collapsed .sidebar-status-card,
+.modern-sidebar.sidebar-collapsed .sidebar-status-card,
+body.sidebar-collapsed .modern-sidebar .sidebar-status-card,
+body.sidebar-mini .modern-sidebar .sidebar-status-card {
+    padding: 12px 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 60px !important;
+}
+
+.modern-sidebar.collapsed .sidebar-status-card > *:not(.status-dot),
+.modern-sidebar.sidebar-collapsed .sidebar-status-card > *:not(.status-dot),
+body.sidebar-collapsed .modern-sidebar .sidebar-status-card > *:not(.status-dot),
+body.sidebar-mini .modern-sidebar .sidebar-status-card > *:not(.status-dot) {
+    display: none !important;
+}
+
+.modern-sidebar.collapsed .status-dot,
+.modern-sidebar.sidebar-collapsed .status-dot,
+body.sidebar-collapsed .modern-sidebar .status-dot,
+body.sidebar-mini .modern-sidebar .status-dot {
+    margin: 0 !important;
+}
+
+/* Section labels hidden in collapsed state */
+.modern-sidebar.collapsed .nav-section-label,
+.modern-sidebar.sidebar-collapsed .nav-section-label,
+body.sidebar-collapsed .modern-sidebar .nav-section-label,
+body.sidebar-mini .modern-sidebar .nav-section-label {
+    display: none !important;
+}
+
+/* Nav links become centered icon buttons */
+.modern-sidebar.collapsed .modern-nav-link,
+.modern-sidebar.sidebar-collapsed .modern-nav-link,
+body.sidebar-collapsed .modern-sidebar .modern-nav-link,
+body.sidebar-mini .modern-sidebar .modern-nav-link {
+    width: 56px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    margin: 0 auto 12px auto !important;
+    padding: 0 !important;
+    border-radius: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+}
+
+.modern-sidebar.collapsed .modern-nav-link .nav-text,
+.modern-sidebar.sidebar-collapsed .modern-nav-link .nav-text,
+body.sidebar-collapsed .modern-sidebar .modern-nav-link .nav-text,
+body.sidebar-mini .modern-sidebar .modern-nav-link .nav-text {
+    display: none !important;
+}
+
+.modern-sidebar.collapsed .modern-nav-link .nav-icon,
+.modern-sidebar.sidebar-collapsed .modern-nav-link .nav-icon,
+body.sidebar-collapsed .modern-sidebar .modern-nav-link .nav-icon,
+body.sidebar-mini .modern-sidebar .modern-nav-link .nav-icon {
+    width: 22px !important;
+    height: 22px !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Bottom user box */
+.modern-sidebar.collapsed .sidebar-user-card,
+.modern-sidebar.sidebar-collapsed .sidebar-user-card,
+body.sidebar-collapsed .modern-sidebar .sidebar-user-card,
+body.sidebar-mini .modern-sidebar .sidebar-user-card {
+    padding: 12px 0 !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    min-height: 64px !important;
+}
+
+.modern-sidebar.collapsed .sidebar-user-card .user-meta,
+.modern-sidebar.collapsed .sidebar-user-card .user-name,
+.modern-sidebar.collapsed .sidebar-user-card .user-role,
+.modern-sidebar.sidebar-collapsed .sidebar-user-card .user-meta,
+.modern-sidebar.sidebar-collapsed .sidebar-user-card .user-name,
+.modern-sidebar.sidebar-collapsed .sidebar-user-card .user-role,
+body.sidebar-collapsed .modern-sidebar .sidebar-user-card .user-meta,
+body.sidebar-collapsed .modern-sidebar .sidebar-user-card .user-name,
+body.sidebar-collapsed .modern-sidebar .sidebar-user-card .user-role,
+body.sidebar-mini .modern-sidebar .sidebar-user-card .user-meta,
+body.sidebar-mini .modern-sidebar .sidebar-user-card .user-name,
+body.sidebar-mini .modern-sidebar .sidebar-user-card .user-role {
+    display: none !important;
+}
+
+.modern-sidebar.collapsed .sidebar-user-card .logout-btn,
+.modern-sidebar.sidebar-collapsed .sidebar-user-card .logout-btn,
+body.sidebar-collapsed .modern-sidebar .sidebar-user-card .logout-btn,
+body.sidebar-mini .modern-sidebar .sidebar-user-card .logout-btn {
+    display: none !important;
+}
+
+/* Collapse button itself */
+.modern-sidebar.collapsed .sidebar-collapse-btn,
+.modern-sidebar.sidebar-collapsed .sidebar-collapse-btn,
+body.sidebar-collapsed .modern-sidebar .sidebar-collapse-btn,
+body.sidebar-mini .modern-sidebar .sidebar-collapse-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* BEGIN SAFE COLLAPSED SIDEBAR ALIGNMENT FIX */
+
+/* Only affects sidebar after clicking collapse */
+.modern-shell.sidebar-collapsed {
+    --sidebar-collapsed-width: 108px !important;
+    grid-template-columns: 108px minmax(0, 1fr) !important;
+}
+
+/* Keep collapsed sidebar wider and cleaner */
+.modern-shell.sidebar-collapsed .modern-sidebar {
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    overflow: visible !important;
+}
+
+/* Brand/logo area */
+.modern-shell.sidebar-collapsed .sidebar-brand {
+    min-height: 92px !important;
+    padding: 16px 0 !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    position: relative !important;
+}
+
+.modern-shell.sidebar-collapsed .brand-mark,
+.modern-shell.sidebar-collapsed .brand-mark-logo {
+    width: 50px !important;
+    height: 50px !important;
+    flex: 0 0 50px !important;
+    margin: 0 auto !important;
+}
+
+.modern-shell.sidebar-collapsed .brand-copy {
+    display: none !important;
+}
+
+/* Collapse button stays outside neatly */
+.modern-shell.sidebar-collapsed .sidebar-collapse-btn {
+    position: absolute !important;
+    right: -18px !important;
+    top: 28px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    transform: none !important;
+    z-index: 50 !important;
+}
+
+/* System status becomes a centered dot card */
+.modern-shell.sidebar-collapsed .sidebar-system-status {
+    width: 56px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    margin: 16px auto 18px auto !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    border-radius: 18px !important;
+}
+
+.modern-shell.sidebar-collapsed .sidebar-system-status div {
+    display: none !important;
+}
+
+.modern-shell.sidebar-collapsed .sidebar-system-status .live-dot,
+.modern-shell.sidebar-collapsed .live-dot {
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+/* Hide section labels only when collapsed */
+.modern-shell.sidebar-collapsed .nav-section-label {
+    display: none !important;
+}
+
+/* Center nav icons properly */
+.modern-shell.sidebar-collapsed .modern-nav {
+    padding: 10px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    overflow-x: visible !important;
+}
+
+.modern-shell.sidebar-collapsed .modern-nav-link {
+    width: 58px !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    margin: 0 auto 10px auto !important;
+    padding: 0 !important;
+    border-radius: 18px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 0 !important;
+}
+
+.modern-shell.sidebar-collapsed .modern-nav-link:hover {
+    transform: none !important;
+}
+
+.modern-shell.sidebar-collapsed .modern-nav-link .nav-text {
+    display: none !important;
+}
+
+.modern-shell.sidebar-collapsed .modern-nav-link .nav-icon {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.modern-shell.sidebar-collapsed .modern-nav-link.active::before {
+    left: -10px !important;
+    top: 14px !important;
+    bottom: 14px !important;
+}
+
+/* Bottom profile cleaned */
+.modern-shell.sidebar-collapsed .sidebar-profile {
+    width: 66px !important;
+    min-height: 66px !important;
+    margin: auto auto 14px auto !important;
+    padding: 10px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 0 !important;
+    border-radius: 20px !important;
+}
+
+.modern-shell.sidebar-collapsed .sidebar-profile .profile-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+    margin: 0 !important;
+}
+
+.modern-shell.sidebar-collapsed .sidebar-profile .profile-copy,
+.modern-shell.sidebar-collapsed .sidebar-profile .sidebar-logout {
+    display: none !important;
+}
+
+/* END SAFE COLLAPSED SIDEBAR ALIGNMENT FIX */

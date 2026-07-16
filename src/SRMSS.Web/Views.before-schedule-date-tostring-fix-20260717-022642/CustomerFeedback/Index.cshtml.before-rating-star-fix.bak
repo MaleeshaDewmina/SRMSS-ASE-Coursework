@@ -1,0 +1,123 @@
+﻿@model IEnumerable<SRMSS.Web.Models.CustomerFeedback>
+
+@{
+    ViewData["Title"] = "Customer Feedback";
+    ViewData["PageTitle"] = "Customer Feedback";
+    ViewData["PageSubtitle"] = "Customer service feedback, ratings, response tracking and issue resolution.";
+
+    string role = Context.Session.GetString(SessionKeys.Role) ?? string.Empty;
+    bool isCustomer = role == "Customer";
+    bool canRespond = role == "SuperAdmin" || role == "Admin" || role == "User";
+    bool canDelete = role == "SuperAdmin" || role == "Admin";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success srmss-alert">@TempData["SuccessMessage"]</div>
+}
+
+<div class="module-hero feedback-hero">
+    <div>
+        <span class="module-kicker">Service Quality</span>
+        <h2>@(isCustomer ? "My Feedback" : "Customer Feedback Center")</h2>
+        <p>@(isCustomer ? "Submit and track your route service feedback." : "Monitor customer issues, response status and route satisfaction signals.")</p>
+    </div>
+    @if (isCustomer)
+    {
+        <a asp-action="Create" class="srmss-btn primary">+ Submit Feedback</a>
+    }
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><div class="metric-icon">O</div><div><p>Open</p><h3>@ViewBag.OpenFeedback</h3></div></div>
+    <div class="metric-card"><div class="metric-icon amber">R</div><div><p>In Review</p><h3>@ViewBag.InReviewFeedback</h3></div></div>
+    <div class="metric-card"><div class="metric-icon green">âœ“</div><div><p>Resolved</p><h3>@ViewBag.ResolvedFeedback</h3></div></div>
+    <div class="metric-card"><div class="metric-icon blue">â˜…</div><div><p>Avg Rating</p><h3>@(((decimal)ViewBag.AverageRating).ToString("N1"))</h3></div></div>
+</div>
+
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Search and Filter Feedback</h3>
+    <form method="get" class="enterprise-filter-grid">
+        <div>
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="Open" selected="@(ViewBag.Status == "Open")">Open</option>
+                <option value="In Review" selected="@(ViewBag.Status == "In Review")">In Review</option>
+                <option value="Resolved" selected="@(ViewBag.Status == "Resolved")">Resolved</option>
+                <option value="Closed" selected="@(ViewBag.Status == "Closed")">Closed</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                <option value="General" selected="@(ViewBag.Category == "General")">General</option>
+                <option value="Delay" selected="@(ViewBag.Category == "Delay")">Delay</option>
+                <option value="Vehicle" selected="@(ViewBag.Category == "Vehicle")">Vehicle</option>
+                <option value="Driver" selected="@(ViewBag.Category == "Driver")">Driver</option>
+                <option value="Safety" selected="@(ViewBag.Category == "Safety")">Safety</option>
+                <option value="Route" selected="@(ViewBag.Category == "Route")">Route</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label">Search</label>
+            <input name="search" value="@ViewBag.Search" class="form-control" placeholder="Subject or message..." />
+        </div>
+        <div class="filter-button-area"><button type="submit" class="srmss-btn primary w-100">Apply</button></div>
+        <div class="filter-button-area"><a asp-action="Index" class="srmss-btn secondary w-100">Clear</a></div>
+    </form>
+</div>
+
+<div class="feedback-grid">
+    @if (Model.Any())
+    {
+        foreach (var item in Model)
+        {
+            string statusClass = item.Status == "Resolved" || item.Status == "Closed" ? "green" : item.Status == "In Review" ? "amber" : "blue";
+            string priorityClass = item.Priority == "High" || item.Priority == "Critical" ? "red" : "blue";
+            <div class="srmss-card feedback-card">
+                <div class="feedback-card-top">
+                    <div>
+                        <span class="module-kicker">@item.Category</span>
+                        <h3>@item.Subject</h3>
+                    </div>
+                    <span class="status-pill @statusClass">@item.Status</span>
+                </div>
+                <p>@item.Message</p>
+                <div class="feedback-meta">
+                    <span>Rating: @(new string('*', item.Rating))@(new string('-', 5 - item.Rating))</span>
+                    <span class="status-pill @priorityClass">@item.Priority</span>
+                    <span>@item.SubmittedAt.ToString("dd MMM yyyy")</span>
+                </div>
+                <div class="feedback-meta mt-2">
+                    <span>Route: @(item.TransportRoute?.RouteName ?? "General")</span>
+                    @if (!isCustomer)
+                    {
+                        <span>Customer: @(item.AppUser?.FullName ?? item.CustomerKey)</span>
+                    }
+                </div>
+                <div class="feedback-actions">
+                    <a asp-action="Details" asp-route-id="@item.Id" class="action-link">Details</a>
+                    @if (canRespond)
+                    {
+                        <a asp-action="Respond" asp-route-id="@item.Id" class="action-link">Respond</a>
+                    }
+                    @if (canDelete)
+                    {
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="action-link danger">Delete</a>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="srmss-card text-center text-muted py-5">No feedback records found.</div>
+    }
+</div>
+
+
+
+
+

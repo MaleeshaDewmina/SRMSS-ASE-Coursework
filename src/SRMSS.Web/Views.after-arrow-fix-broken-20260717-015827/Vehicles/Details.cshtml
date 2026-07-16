@@ -1,0 +1,106 @@
+﻿@model SRMSS.Web.Models.Vehicle
+
+@{
+    ViewData["Title"] = "Vehicle Details";
+    ViewData["PageTitle"] = "Vehicle Details";
+    ViewData["PageSubtitle"] = "Vehicle profile, cost records, service history and schedule activity.";
+    string role = Context.Session.GetString(SessionKeys.Role) ?? string.Empty;
+    bool canManage = role == "SuperAdmin" || role == "Admin";
+    decimal fuelCost = Model.FuelLogs?.Sum(f => f.Cost) ?? 0;
+    decimal maintenanceCost = Model.MaintenanceLogs?.Sum(m => m.Cost) ?? 0;
+}
+
+<div class="module-hero vehicle-hero mb-4">
+    <div>
+        <span class="module-kicker">Vehicle Profile</span>
+        <h2>@Model.RegistrationNumber</h2>
+        <p>@Model.VehicleType | @Model.FuelType | @Model.Status | @Model.MaintenanceStatus</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a asp-action="Index" class="srmss-btn secondary">Back</a>
+        <a asp-controller="FuelLogs" asp-action="Create" asp-route-vehicleId="@Model.Id" class="srmss-btn primary">Add Fuel</a>
+        <a asp-controller="MaintenanceLogs" asp-action="Create" asp-route-vehicleId="@Model.Id" class="srmss-btn secondary">Add Service</a>
+        @if (canManage)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="srmss-btn primary">Edit</a>
+        }
+    </div>
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><div class="metric-icon">KM</div><div><p>Mileage</p><h3>@Model.Mileage.ToString("N0")</h3></div></div>
+    <div class="metric-card"><div class="metric-icon green">S</div><div><p>Schedules</p><h3>@(Model.Schedules?.Count ?? 0)</h3></div></div>
+    <div class="metric-card"><div class="metric-icon amber">F</div><div><p>Fuel Cost</p><h3>@fuelCost.ToString("N0")</h3></div></div>
+    <div class="metric-card"><div class="metric-icon red">M</div><div><p>Service Cost</p><h3>@maintenanceCost.ToString("N0")</h3></div></div>
+</div>
+
+<div class="enterprise-detail-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Registration and Compliance</h3>
+        <div class="detail-list">
+            <div><span>Manufacturer / Model</span><strong>@(Model.Manufacturer ?? "") @(Model.Model ?? "")</strong></div>
+            <div><span>Chassis Number</span><strong>@(Model.ChassisNumber ?? "Not provided")</strong></div>
+            <div><span>Insurance Expiry</span><strong>@(Model.InsuranceExpiryDate?.ToString("dd MMM yyyy") ?? "Not set")</strong></div>
+            <div><span>Revenue License Expiry</span><strong>@(Model.RevenueLicenseExpiryDate?.ToString("dd MMM yyyy") ?? "Not set")</strong></div>
+            <div><span>Assigned Depot</span><strong>@Model.AssignedDepot</strong></div>
+            <div><span>Capacity</span><strong>@Model.SeatingCapacity seats</strong></div>
+        </div>
+    </div>
+
+    <div class="srmss-card amber">
+        <h3 class="card-title">Maintenance Readiness</h3>
+        <div class="detail-list">
+            <div><span>Maintenance Status</span><strong>@Model.MaintenanceStatus</strong></div>
+            <div><span>Last Service</span><strong>@(Model.LastServiceDate?.ToString("dd MMM yyyy") ?? "Not recorded")</strong></div>
+            <div><span>Next Service Mileage</span><strong>@(Model.NextServiceKm?.ToString("N0") ?? "Not set")</strong></div>
+            <div><span>Active</span><strong>@(Model.IsActive ? "Yes" : "No")</strong></div>
+        </div>
+    </div>
+</div>
+
+<div class="srmss-card mt-4">
+    <h3 class="card-title">Recent Fuel Logs</h3>
+    <div class="table-responsive">
+        <table class="srmss-table">
+            <thead><tr><th>Date</th><th>Litres</th><th>Cost</th><th>Efficiency</th><th>Odometer</th></tr></thead>
+            <tbody>
+                @if (Model.FuelLogs != null && Model.FuelLogs.Any())
+                {
+                    foreach (var log in Model.FuelLogs.OrderByDescending(f => f.FuelDate).Take(8))
+                    {
+                        <tr><td>@log.FuelDate.ToString("dd MMM yyyy")</td><td>@log.Litres.ToString("N2")</td><td>@log.Cost.ToString("N2")</td><td>@log.FuelEfficiencyKmPerLitre.ToString("N2") km/l</td><td>@log.OdometerReading.ToString("N0")</td></tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">No fuel logs found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="srmss-card mt-4">
+    <h3 class="card-title">Recent Maintenance</h3>
+    <div class="table-responsive">
+        <table class="srmss-table">
+            <thead><tr><th>Date</th><th>Type</th><th>Status</th><th>Cost</th><th>Next Service</th></tr></thead>
+            <tbody>
+                @if (Model.MaintenanceLogs != null && Model.MaintenanceLogs.Any())
+                {
+                    foreach (var log in Model.MaintenanceLogs.OrderByDescending(m => m.MaintenanceDate).Take(8))
+                    {
+                        <tr><td>@log.MaintenanceDate.ToString("dd MMM yyyy")</td><td>@log.MaintenanceType</td><td><span class="status-pill blue">@log.Status</span></td><td>@log.Cost.ToString("N2")</td><td>@(log.NextServiceDate?.ToString("dd MMM yyyy") ?? "Not set")</td></tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">No maintenance records found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+

@@ -1,0 +1,31 @@
+﻿@model SRMSS.Web.Models.Vehicle
+
+@{
+    ViewData["Title"] = "Deactivate Vehicle";
+    ViewData["PageTitle"] = "Deactivate Vehicle";
+    ViewData["PageSubtitle"] = "Deactivate a vehicle profile without deleting historical operational records.";
+}
+
+<div class="srmss-card danger-panel">
+    <h3 class="card-title">Deactivate Vehicle Profile</h3>
+    <p class="card-subtitle">This action keeps fuel, maintenance and schedule history but removes the vehicle from active operations.</p>
+
+    <div class="detail-list mb-4">
+        <div><span>Vehicle</span><strong>@Model.RegistrationNumber</strong></div>
+        <div><span>Type</span><strong>@Model.VehicleType</strong></div>
+        <div><span>Status</span><strong>@Model.Status</strong></div>
+        <div><span>Schedule Records</span><strong>@(Model.Schedules?.Count ?? 0)</strong></div>
+    </div>
+
+    <form asp-action="Delete" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="enterprise-form-actions">
+            <a asp-action="Index" class="srmss-btn secondary">Cancel</a>
+            <button type="submit" class="srmss-btn danger">Deactivate Vehicle</button>
+        </div>
+    </form>
+</div>
+
+
+

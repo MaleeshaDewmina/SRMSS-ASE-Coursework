@@ -1,4 +1,4 @@
-@model SRMSS.Web.Models.MaintenanceLog
+﻿@model SRMSS.Web.Models.MaintenanceLog
 
 @{
     bool isEdit = Model.Id > 0;
@@ -94,4 +94,5 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
+
 

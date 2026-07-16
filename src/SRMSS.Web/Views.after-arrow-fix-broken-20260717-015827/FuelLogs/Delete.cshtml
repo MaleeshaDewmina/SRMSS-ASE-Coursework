@@ -1,0 +1,29 @@
+﻿@model SRMSS.Web.Models.FuelLog
+
+@{
+    ViewData["Title"] = "Delete Fuel Log";
+    ViewData["PageTitle"] = "Delete Fuel Log";
+    ViewData["PageSubtitle"] = "Remove an incorrect fuel record from the system.";
+}
+
+<div class="srmss-card danger-panel">
+    <h3 class="card-title">Delete Fuel Log</h3>
+    <p class="card-subtitle">This action permanently removes this fuel record.</p>
+    <div class="detail-list mb-4">
+        <div><span>Vehicle</span><strong>@(Model.Vehicle?.RegistrationNumber ?? "Unknown")</strong></div>
+        <div><span>Date</span><strong>@Model.FuelDate.ToString("dd MMM yyyy")</strong></div>
+        <div><span>Litres</span><strong>@Model.Litres.ToString("N2")</strong></div>
+        <div><span>Cost</span><strong>Rs. @Model.Cost.ToString("N2")</strong></div>
+    </div>
+    <form asp-action="Delete" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="enterprise-form-actions">
+            <a asp-action="Index" class="srmss-btn secondary">Cancel</a>
+            <button type="submit" class="srmss-btn danger">Delete Fuel Log</button>
+        </div>
+    </form>
+</div>
+
+
+

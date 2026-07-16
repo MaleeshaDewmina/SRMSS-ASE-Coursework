@@ -1,0 +1,4924 @@
+﻿@using System.Text.Json
+@model SRMSS.Web.Models.TransportRoute
+
+@{
+    ViewData["Title"] = "Journey Details";
+    ViewData["PageTitle"] = "Journey Details";
+    ViewData["PageSubtitle"] =
+        "Explore route information, stops, live map preview, timetables and current trip status.";
+
+    bool isFavorite =
+        ViewBag.IsFavorite is bool favorite &&
+        favorite;
+
+    var orderedStops =
+        Model.RouteStops != null
+            ? Model.RouteStops
+                .OrderBy(stop => stop.StopOrder)
+                .ToList()
+            : new List<SRMSS.Web.Models.RouteStop>();
+
+    var schedules =
+        Model.Schedules != null
+            ? Model.Schedules
+                .OrderBy(schedule =>
+                    schedule.ScheduleDate < DateTime.Today
+                        ? 1
+                        : 0
+                )
+                .ThenBy(schedule => schedule.ScheduleDate)
+                .ThenBy(schedule => schedule.DepartureTime)
+                .ToList()
+            : new List<SRMSS.Web.Models.Schedule>();
+
+    var upcomingSchedules =
+        schedules
+            .Where(schedule =>
+                schedule.ScheduleDate.Date >= DateTime.Today &&
+                schedule.Status != "Completed" &&
+                schedule.Status != "Cancelled"
+            )
+            .ToList();
+
+    var nextSchedule =
+        upcomingSchedules.FirstOrDefault();
+
+    int activeScheduleCount =
+        schedules.Count(schedule =>
+            schedule.Status == "Scheduled" ||
+            schedule.Status == "On Time" ||
+            schedule.Status == "Departed"
+        );
+
+    int delayedScheduleCount =
+        schedules.Count(schedule =>
+            schedule.Status == "Delayed"
+        );
+
+    var origin =
+        System.Uri.EscapeDataString(
+            Model.StartPoint ?? ""
+        );
+
+    var destination =
+        System.Uri.EscapeDataString(
+            Model.EndPoint ?? ""
+        );
+
+    var waypointStops =
+        orderedStops
+            .Where(stop =>
+                !string.Equals(
+                    stop.StopName,
+                    Model.StartPoint,
+                    StringComparison.OrdinalIgnoreCase
+                )
+                &&
+                !string.Equals(
+                    stop.StopName,
+                    Model.EndPoint,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            .ToList();
+
+    var waypoints =
+        string.Join(
+            "%7C",
+            waypointStops.Select(
+                stop =>
+                    System.Uri.EscapeDataString(
+                        stop.StopName ?? ""
+                    )
+            )
+        );
+
+    var mapUrl =
+        "https://www.google.com/maps/dir/?api=1"
+        + "&origin=" + origin
+        + "&destination=" + destination
+        + (
+            string.IsNullOrWhiteSpace(waypoints)
+                ? ""
+                : "&waypoints=" + waypoints
+        )
+        + "&travelmode=driving";
+
+    var routeData = new
+    {
+        routeId = Model.Id,
+        routeName = Model.RouteName,
+        startPoint = Model.StartPoint,
+        endPoint = Model.EndPoint,
+        distanceKm = Model.DistanceKm,
+        estimatedDurationMinutes =
+            Model.EstimatedDurationMinutes,
+        serviceType = Model.ServiceType,
+        status = Model.Status,
+
+        stops = orderedStops
+            .Select(stop => new
+            {
+                stopOrder = stop.StopOrder,
+                stopName = stop.StopName,
+                estimatedMinutes =
+                    stop.EstimatedMinutesFromStart
+            })
+            .ToList()
+    };
+
+    var routeDataJson =
+        JsonSerializer.Serialize(
+            routeData,
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy =
+                    JsonNamingPolicy.CamelCase
+            }
+        );
+}
+
+
+<style>
+
+    /* =========================================================
+       PAGE
+    ========================================================= */
+
+    .journey-details-page {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        padding-bottom: 48px;
+    }
+
+
+    .journey-reveal {
+        opacity: 0;
+        transform: translateY(22px);
+
+        animation:
+            journeyReveal
+            0.72s
+            cubic-bezier(.2, .8, .2, 1)
+            forwards;
+
+        animation-delay:
+            var(--delay, 0s);
+    }
+
+
+    @@keyframes journeyReveal {
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+
+    /* =========================================================
+       TOP NAVIGATION
+    ========================================================= */
+
+    .journey-top-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+
+    .journey-back-btn,
+    .journey-map-btn,
+    .journey-favorite-btn {
+        min-height: 46px;
+        padding: 0 16px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+
+        border-radius: 14px;
+
+        text-decoration: none;
+
+        font-size: 12px;
+        font-weight: 800;
+
+        transition:
+            transform 0.22s ease,
+            box-shadow 0.22s ease,
+            border-color 0.22s ease,
+            background 0.22s ease;
+    }
+
+
+    .journey-back-btn {
+        color: #475569;
+
+        background: #ffffff;
+
+        border:
+            1px solid #dbe4ee;
+    }
+
+
+    .journey-back-btn:hover {
+        color: #2563eb;
+
+        border-color: #93c5fd;
+
+        transform: translateX(-3px);
+    }
+
+
+    .journey-top-action-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+    }
+
+
+    .journey-map-btn {
+        color: #ffffff;
+
+        background:
+            linear-gradient(
+                135deg,
+                #2563eb,
+                #0284c7
+            );
+
+        box-shadow:
+            0 10px 24px
+            rgba(37, 99, 235, 0.22);
+    }
+
+
+    .journey-map-btn:hover {
+        color: #ffffff;
+
+        transform: translateY(-2px);
+
+        box-shadow:
+            0 15px 30px
+            rgba(37, 99, 235, 0.28);
+    }
+
+
+    .journey-favorite-form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+
+    .journey-favorite-btn {
+        border: none;
+        cursor: pointer;
+
+        color: #7c3aed;
+
+        background:
+            rgba(124, 58, 237, 0.08);
+
+        border:
+            1px solid
+            rgba(124, 58, 237, 0.14);
+    }
+
+
+    .journey-favorite-btn:hover {
+        transform: translateY(-2px);
+
+        background:
+            rgba(124, 58, 237, 0.13);
+    }
+
+
+    .journey-favorite-btn.saved {
+        color: #be123c;
+
+        background:
+            rgba(244, 63, 94, 0.09);
+
+        border-color:
+            rgba(244, 63, 94, 0.16);
+    }
+
+
+    .journey-back-btn svg,
+    .journey-map-btn svg,
+    .journey-favorite-btn svg {
+        width: 17px;
+        height: 17px;
+    }
+
+
+    /* =========================================================
+       ALERTS
+    ========================================================= */
+
+    .journey-alert {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        padding: 14px 17px;
+
+        border-radius: 16px;
+
+        font-size: 12px;
+        font-weight: 750;
+
+        animation:
+            journeyAlertSlide
+            0.45s ease forwards;
+    }
+
+
+    .journey-alert.success {
+        color: #166534;
+
+        background:
+            rgba(34, 197, 94, 0.10);
+
+        border:
+            1px solid
+            rgba(34, 197, 94, 0.20);
+    }
+
+
+    .journey-alert.warning {
+        color: #92400e;
+
+        background:
+            rgba(245, 158, 11, 0.11);
+
+        border:
+            1px solid
+            rgba(245, 158, 11, 0.22);
+    }
+
+
+    @@keyframes journeyAlertSlide {
+
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+
+    /* =========================================================
+       HERO
+    ========================================================= */
+
+    .journey-hero {
+        position: relative;
+
+        overflow: hidden;
+
+        min-height: 380px;
+
+        display: grid;
+
+        grid-template-columns:
+            minmax(0, 1.15fr)
+            minmax(350px, 0.85fr);
+
+        align-items: center;
+
+        gap: 30px;
+
+        padding: 46px 48px;
+
+        border-radius: 30px;
+
+        color: #ffffff;
+
+        background:
+            radial-gradient(
+                circle at 84% 16%,
+                rgba(56, 189, 248, 0.28),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at 74% 105%,
+                rgba(37, 99, 235, 0.28),
+                transparent 38%
+            ),
+            linear-gradient(
+                125deg,
+                #041426 0%,
+                #082447 48%,
+                #123d7a 100%
+            );
+
+        box-shadow:
+            0 24px 62px
+            rgba(15, 23, 42, 0.18);
+    }
+
+
+    .journey-hero::before {
+        content: "";
+
+        position: absolute;
+
+        width: 430px;
+        height: 430px;
+
+        right: -140px;
+        bottom: -240px;
+
+        border-radius: 50%;
+
+        border:
+            1px solid
+            rgba(255, 255, 255, 0.11);
+
+        animation:
+            journeyHeroCircle
+            9s ease-in-out infinite;
+    }
+
+
+    .journey-hero::after {
+        content: "";
+
+        position: absolute;
+
+        width: 290px;
+        height: 290px;
+
+        right: -45px;
+        bottom: -165px;
+
+        border-radius: 50%;
+
+        border:
+            1px solid
+            rgba(255, 255, 255, 0.07);
+
+        animation:
+            journeyHeroCircle
+            11s ease-in-out infinite reverse;
+    }
+
+
+    @@keyframes journeyHeroCircle {
+
+        0%,
+        100% {
+            transform:
+                translateY(0)
+                scale(1);
+        }
+
+        50% {
+            transform:
+                translateY(-18px)
+                scale(1.04);
+        }
+    }
+
+
+    .journey-hero-copy {
+        position: relative;
+        z-index: 4;
+    }
+
+
+    .journey-hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+
+        margin-bottom: 15px;
+
+        color: #7dd3fc;
+
+        font-size: 11px;
+        font-weight: 850;
+
+        letter-spacing: 1.5px;
+    }
+
+
+    .journey-live-dot {
+        width: 8px;
+        height: 8px;
+
+        border-radius: 50%;
+
+        background: #22c55e;
+
+        animation:
+            journeyLivePulse
+            1.8s infinite;
+    }
+
+
+    @@keyframes journeyLivePulse {
+
+        0% {
+            box-shadow:
+                0 0 0 0
+                rgba(34, 197, 94, 0.50);
+        }
+
+        70% {
+            box-shadow:
+                0 0 0 9px
+                rgba(34, 197, 94, 0);
+        }
+
+        100% {
+            box-shadow:
+                0 0 0 0
+                rgba(34, 197, 94, 0);
+        }
+    }
+
+
+    .journey-hero h1 {
+        margin: 0;
+
+        max-width: 730px;
+
+        font-size:
+            clamp(36px, 4.3vw, 61px);
+
+        font-weight: 900;
+
+        line-height: 1.04;
+
+        letter-spacing: -2.4px;
+    }
+
+
+    .journey-hero h1 span {
+        color: #7dd3fc;
+    }
+
+
+    .journey-hero-direction {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+
+        gap: 10px;
+
+        margin-top: 17px;
+
+        color:
+            rgba(226, 232, 240, 0.90);
+
+        font-size: 16px;
+        font-weight: 750;
+    }
+
+
+    .journey-hero-direction svg {
+        width: 20px;
+        height: 20px;
+
+        color: #7dd3fc;
+    }
+
+
+    .journey-hero-description {
+        max-width: 670px;
+
+        margin: 19px 0 0;
+
+        color:
+            rgba(226, 232, 240, 0.77);
+
+        font-size: 14px;
+
+        line-height: 1.8;
+    }
+
+
+    .journey-hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+
+        margin-top: 24px;
+    }
+
+
+    .journey-hero-badge {
+        min-height: 35px;
+
+        padding: 0 11px;
+
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        border-radius: 999px;
+
+        color: #e2e8f0;
+
+        background:
+            rgba(255, 255, 255, 0.08);
+
+        border:
+            1px solid
+            rgba(255, 255, 255, 0.13);
+
+        backdrop-filter: blur(12px);
+
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+
+    .journey-hero-badge svg {
+        width: 14px;
+        height: 14px;
+
+        color: #7dd3fc;
+    }
+
+
+    /* =========================================================
+       HERO VISUAL
+    ========================================================= */
+
+    .journey-hero-visual {
+        position: relative;
+        z-index: 4;
+
+        min-height: 270px;
+    }
+
+
+    .journey-visual-orbit {
+        position: absolute;
+
+        border-radius: 50%;
+
+        border:
+            1px solid
+            rgba(125, 211, 252, 0.16);
+
+        animation:
+            journeyOrbit
+            16s linear infinite;
+    }
+
+
+    .journey-visual-orbit.one {
+        width: 230px;
+        height: 230px;
+
+        right: 15px;
+        top: 10px;
+    }
+
+
+    .journey-visual-orbit.two {
+        width: 155px;
+        height: 155px;
+
+        right: 53px;
+        top: 47px;
+
+        animation-direction: reverse;
+
+        animation-duration: 11s;
+    }
+
+
+    @@keyframes journeyOrbit {
+
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+
+    .journey-visual-track {
+        position: absolute;
+
+        width: 88%;
+        height: 100px;
+
+        left: 4%;
+        top: 93px;
+
+        transform: rotate(-8deg);
+    }
+
+
+    .journey-visual-track::before {
+        content: "";
+
+        position: absolute;
+
+        left: 0;
+        right: 0;
+
+        top: 45px;
+
+        height: 4px;
+
+        border-radius: 99px;
+
+        background:
+            repeating-linear-gradient(
+                90deg,
+                rgba(125, 211, 252, 0.95)
+                    0 11px,
+                transparent
+                    11px 20px
+            );
+    }
+
+
+    .journey-moving-bus {
+        position: absolute;
+
+        left: 0;
+        top: 18px;
+
+        width: 54px;
+        height: 54px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 17px;
+
+        color: #ffffff;
+
+        background:
+            linear-gradient(
+                135deg,
+                #2563eb,
+                #0ea5e9
+            );
+
+        box-shadow:
+            0 15px 32px
+            rgba(14, 165, 233, 0.40);
+
+        animation:
+            journeyBusMove
+            6s ease-in-out
+            infinite alternate;
+    }
+
+
+    @@keyframes journeyBusMove {
+
+        from {
+            left: 0;
+        }
+
+        to {
+            left:
+                calc(100% - 54px);
+        }
+    }
+
+
+    .journey-moving-bus svg {
+        width: 29px;
+        height: 29px;
+    }
+
+
+    .journey-visual-pin {
+        position: absolute;
+
+        width: 38px;
+        height: 38px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius:
+            50% 50% 50% 0;
+
+        transform: rotate(-45deg);
+
+        background: #ffffff;
+
+        box-shadow:
+            0 14px 30px
+            rgba(15, 23, 42, 0.25);
+    }
+
+
+    .journey-visual-pin::after {
+        content: "";
+
+        width: 10px;
+        height: 10px;
+
+        border-radius: 50%;
+
+        background: #2563eb;
+    }
+
+
+    .journey-visual-pin.start {
+        left: 0;
+        top: 145px;
+    }
+
+
+    .journey-visual-pin.end {
+        right: 0;
+        top: 69px;
+    }
+
+
+    .journey-visual-info {
+        position: absolute;
+
+        right: 24px;
+        bottom: 0;
+
+        min-width: 220px;
+
+        display: flex;
+        align-items: center;
+        gap: 11px;
+
+        padding: 14px;
+
+        border-radius: 17px;
+
+        background:
+            rgba(255, 255, 255, 0.10);
+
+        border:
+            1px solid
+            rgba(255, 255, 255, 0.14);
+
+        backdrop-filter: blur(16px);
+
+        animation:
+            journeyFloat
+            4s ease-in-out infinite;
+    }
+
+
+    @@keyframes journeyFloat {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-8px);
+        }
+    }
+
+
+    .journey-visual-info-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        min-height: 42px;
+
+        flex-shrink: 0;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 13px;
+
+        color: #7dd3fc;
+
+        background:
+            rgba(56, 189, 248, 0.14);
+
+        overflow: hidden;
+    }
+
+
+    .journey-visual-info-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+
+    .journey-visual-info small {
+        display: block;
+
+        color: #7dd3fc;
+
+        font-size: 9px;
+        font-weight: 850;
+
+        letter-spacing: 1px;
+    }
+
+
+    .journey-visual-info strong {
+        display: block;
+
+        margin-top: 3px;
+
+        font-size: 13px;
+    }
+
+
+    /* =========================================================
+       STATS
+    ========================================================= */
+
+    .journey-stats-grid {
+        display: grid;
+
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 16px;
+    }
+
+
+    .journey-stat-card {
+        position: relative;
+
+        overflow: hidden;
+
+        min-height: 145px;
+
+        padding: 22px;
+
+        border-radius: 21px;
+
+        background: #ffffff;
+
+        border:
+            1px solid
+            rgba(148, 163, 184, 0.21);
+
+        box-shadow:
+            0 11px 30px
+            rgba(15, 23, 42, 0.055);
+
+        transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease,
+            border-color 0.25s ease;
+    }
+
+
+    .journey-stat-card:hover {
+        transform: translateY(-5px);
+
+        border-color:
+            rgba(37, 99, 235, 0.25);
+
+        box-shadow:
+            0 18px 38px
+            rgba(37, 99, 235, 0.10);
+    }
+
+
+    .journey-stat-icon {
+        width: 43px;
+        height: 43px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 13px;
+
+        color: #2563eb;
+
+        background:
+            rgba(37, 99, 235, 0.09);
+    }
+
+
+    .journey-stat-icon svg {
+        width: 21px;
+        height: 21px;
+    }
+
+
+    .journey-stat-value {
+        margin-top: 14px;
+
+        color: #0f172a;
+
+        font-size: 24px;
+        font-weight: 900;
+
+        line-height: 1;
+    }
+
+
+    .journey-stat-label {
+        display: block;
+
+        margin-top: 7px;
+
+        color: #64748b;
+
+        font-size: 10px;
+        font-weight: 750;
+    }
+
+
+    /* =========================================================
+       MAIN CONTENT GRID
+    ========================================================= */
+
+    .journey-main-grid {
+        display: grid;
+
+        grid-template-columns:
+            minmax(0, 1.5fr)
+            minmax(300px, 0.65fr);
+
+        gap: 20px;
+
+        align-items: start;
+    }
+
+
+    .journey-main-column,
+    .journey-side-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+
+    .journey-side-column {
+        position: sticky;
+        top: 95px;
+    }
+
+
+    .journey-card {
+        padding: 26px;
+
+        border-radius: 24px;
+
+        background: #ffffff;
+
+        border:
+            1px solid
+            rgba(148, 163, 184, 0.21);
+
+        box-shadow:
+            0 12px 35px
+            rgba(15, 23, 42, 0.055);
+    }
+
+
+    .journey-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+
+        gap: 16px;
+
+        margin-bottom: 20px;
+    }
+
+
+    .journey-card-eyebrow {
+        display: block;
+
+        margin-bottom: 6px;
+
+        color: #2563eb;
+
+        font-size: 9px;
+        font-weight: 850;
+
+        letter-spacing: 1.2px;
+    }
+
+
+    .journey-card-header h2 {
+        margin: 0;
+
+        color: #0f172a;
+
+        font-size: 21px;
+        font-weight: 900;
+
+        letter-spacing: -0.4px;
+    }
+
+
+    .journey-card-header p {
+        max-width: 620px;
+
+        margin: 7px 0 0;
+
+        color: #64748b;
+
+        font-size: 11px;
+
+        line-height: 1.7;
+    }
+
+
+    .journey-card-header-icon {
+        width: 48px;
+        height: 48px;
+
+        flex-shrink: 0;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 15px;
+
+        color: #2563eb;
+
+        background:
+            rgba(37, 99, 235, 0.09);
+    }
+
+
+    .journey-card-header-icon svg {
+        width: 23px;
+        height: 23px;
+    }
+
+
+    /* =========================================================
+       MAP
+    ========================================================= */
+
+    .journey-map-shell {
+        overflow: hidden;
+
+        border-radius: 20px;
+
+        background: #e9eef5;
+
+        border:
+            1px solid
+            rgba(148, 163, 184, 0.20);
+    }
+
+
+    .journey-map {
+        width: 100%;
+
+        height: 500px;
+        min-height: 500px;
+
+        position: relative;
+
+        z-index: 1;
+
+        background: #e9eef5;
+    }
+
+
+    .journey-map-loading,
+    .journey-map-error {
+        width: 100%;
+        min-height: 500px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 30px;
+
+        text-align: center;
+
+        color: #64748b;
+
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+
+    .journey-map-loading {
+        gap: 10px;
+    }
+
+
+    .journey-map-loading-dot {
+        width: 9px;
+        height: 9px;
+
+        border-radius: 50%;
+
+        background: #2563eb;
+
+        animation:
+            journeyMapLoading
+            1s ease-in-out infinite alternate;
+    }
+
+
+    @@keyframes journeyMapLoading {
+
+        from {
+            opacity: 0.35;
+            transform: scale(0.75);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+    }
+
+
+    .journey-map-warning {
+        margin-top: 13px;
+
+        padding: 12px 14px;
+
+        border-radius: 13px;
+
+        color: #92400e;
+
+        background:
+            rgba(245, 158, 11, 0.10);
+
+        border:
+            1px solid
+            rgba(245, 158, 11, 0.20);
+
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+
+    .journey-map-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+
+        gap: 11px;
+
+        margin-top: 15px;
+    }
+
+
+    .journey-map-footer p {
+        margin: 0;
+
+        color: #64748b;
+
+        font-size: 10px;
+
+        line-height: 1.6;
+    }
+
+
+    .journey-map-footer a {
+        min-height: 40px;
+
+        padding: 0 13px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+
+        border-radius: 12px;
+
+        color: #ffffff;
+
+        text-decoration: none;
+
+        background:
+            linear-gradient(
+                135deg,
+                #2563eb,
+                #0284c7
+            );
+
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+
+    /* =========================================================
+       MAP MARKERS
+    ========================================================= */
+
+    .custom-route-marker {
+        background: transparent;
+        border: none;
+    }
+
+
+    .route-marker {
+        width: 34px;
+        height: 34px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 50%;
+
+        color: #ffffff;
+
+        border:
+            3px solid #ffffff;
+
+        box-shadow:
+            0 6px 16px
+            rgba(15, 23, 42, 0.28);
+
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+
+    .route-marker.start {
+        background: #16a34a;
+    }
+
+
+    .route-marker.stop {
+        background: #2563eb;
+    }
+
+
+    .route-marker.end {
+        background: #dc2626;
+    }
+
+
+    .route-marker-tooltip {
+        border: none !important;
+
+        border-radius: 8px !important;
+
+        padding: 5px 8px !important;
+
+        font-size: 10px !important;
+
+        font-weight: 750 !important;
+
+        box-shadow:
+            0 4px 12px
+            rgba(15, 23, 42, 0.15) !important;
+    }
+
+
+    /* =========================================================
+       ROUTE TIMELINE
+    ========================================================= */
+
+    .journey-timeline {
+        position: relative;
+
+        display: flex;
+        flex-direction: column;
+    }
+
+
+    .journey-timeline-item {
+        position: relative;
+
+        display: grid;
+
+        grid-template-columns:
+            48px minmax(0, 1fr);
+
+        gap: 13px;
+
+        min-height: 82px;
+    }
+
+
+    .journey-timeline-left {
+        position: relative;
+
+        display: flex;
+        justify-content: center;
+    }
+
+
+    .journey-timeline-line {
+        position: absolute;
+
+        width: 3px;
+
+        top: 36px;
+        bottom: -4px;
+
+        border-radius: 99px;
+
+        background:
+            linear-gradient(
+                to bottom,
+                #93c5fd,
+                #dbeafe
+            );
+    }
+
+
+    .journey-timeline-item:last-child
+    .journey-timeline-line {
+        display: none;
+    }
+
+
+    .journey-timeline-node {
+        position: relative;
+
+        z-index: 2;
+
+        width: 34px;
+        height: 34px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 50%;
+
+        color: #ffffff;
+
+        border:
+            4px solid #ffffff;
+
+        box-shadow:
+            0 0 0 2px
+            rgba(37, 99, 235, 0.14);
+
+        font-size: 9px;
+        font-weight: 900;
+    }
+
+
+    .journey-timeline-node.start {
+        background: #16a34a;
+    }
+
+
+    .journey-timeline-node.stop {
+        background: #2563eb;
+    }
+
+
+    .journey-timeline-node.end {
+        background: #dc2626;
+    }
+
+
+    .journey-timeline-content {
+        min-width: 0;
+
+        padding-bottom: 22px;
+    }
+
+
+    .journey-timeline-content small {
+        display: block;
+
+        color: #94a3b8;
+
+        font-size: 8px;
+        font-weight: 850;
+
+        letter-spacing: 0.8px;
+    }
+
+
+    .journey-timeline-content strong {
+        display: block;
+
+        margin-top: 4px;
+
+        color: #0f172a;
+
+        font-size: 13px;
+        font-weight: 850;
+    }
+
+
+    .journey-timeline-content span {
+        display: block;
+
+        margin-top: 4px;
+
+        color: #64748b;
+
+        font-size: 9px;
+    }
+
+
+    /* =========================================================
+       SIDE CARDS
+    ========================================================= */
+
+    .journey-summary-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+
+    .journey-summary-item {
+        min-height: 62px;
+
+        display: grid;
+
+        grid-template-columns:
+            40px minmax(0, 1fr);
+
+        align-items: center;
+
+        gap: 11px;
+
+        padding: 10px;
+
+        border-radius: 14px;
+
+        background: #f8fafc;
+
+        border:
+            1px solid #edf2f7;
+    }
+
+
+    .journey-summary-icon {
+        width: 40px;
+        height: 40px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 12px;
+
+        color: #2563eb;
+
+        background:
+            rgba(37, 99, 235, 0.09);
+    }
+
+
+    .journey-summary-icon svg {
+        width: 19px;
+        height: 19px;
+    }
+
+
+    .journey-summary-item span {
+        display: block;
+
+        color: #94a3b8;
+
+        font-size: 8px;
+        font-weight: 800;
+
+        letter-spacing: 0.5px;
+
+        text-transform: uppercase;
+    }
+
+
+    .journey-summary-item strong {
+        display: block;
+
+        margin-top: 3px;
+
+        color: #0f172a;
+
+        font-size: 11px;
+        font-weight: 850;
+    }
+
+
+    /* =========================================================
+       NEXT DEPARTURE
+    ========================================================= */
+
+    .journey-next-departure {
+        position: relative;
+
+        overflow: hidden;
+
+        padding: 20px;
+
+        border-radius: 20px;
+
+        color: #ffffff;
+
+        background:
+            radial-gradient(
+                circle at 90% 10%,
+                rgba(56, 189, 248, 0.24),
+                transparent 34%
+            ),
+            linear-gradient(
+                135deg,
+                #0f2747,
+                #164581
+            );
+    }
+
+
+    .journey-next-departure::after {
+        content: "";
+
+        position: absolute;
+
+        width: 130px;
+        height: 130px;
+
+        right: -55px;
+        bottom: -70px;
+
+        border-radius: 50%;
+
+        border:
+            1px solid
+            rgba(255, 255, 255, 0.11);
+    }
+
+
+    .journey-next-departure-eyebrow {
+        color: #7dd3fc;
+
+        font-size: 9px;
+        font-weight: 850;
+
+        letter-spacing: 1px;
+    }
+
+
+    .journey-next-departure h3 {
+        position: relative;
+        z-index: 2;
+
+        margin: 8px 0 0;
+
+        color: #ffffff;
+
+        font-size: 18px;
+        font-weight: 900;
+    }
+
+
+    .journey-next-departure-date {
+        position: relative;
+        z-index: 2;
+
+        margin-top: 14px;
+
+        color:
+            rgba(226, 232, 240, 0.80);
+
+        font-size: 10px;
+    }
+
+
+    .journey-next-departure-time {
+        position: relative;
+        z-index: 2;
+
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+
+        gap: 8px;
+
+        margin-top: 8px;
+
+        font-size: 21px;
+        font-weight: 900;
+    }
+
+
+    .journey-next-departure-time span {
+        color: #7dd3fc;
+    }
+
+
+    .journey-next-departure-status {
+        position: relative;
+        z-index: 2;
+
+        display: inline-flex;
+
+        margin-top: 13px;
+
+        padding: 6px 9px;
+
+        border-radius: 999px;
+
+        color: #bbf7d0;
+
+        background:
+            rgba(34, 197, 94, 0.13);
+
+        border:
+            1px solid
+            rgba(34, 197, 94, 0.18);
+
+        font-size: 9px;
+        font-weight: 800;
+    }
+
+
+    /* =========================================================
+       TIMETABLE
+    ========================================================= */
+
+    .journey-timetable-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+
+    .journey-timetable-card {
+        position: relative;
+
+        overflow: hidden;
+
+        display: grid;
+
+        grid-template-columns:
+            160px
+            minmax(0, 1fr)
+            auto;
+
+        align-items: center;
+
+        gap: 16px;
+
+        padding: 17px;
+
+        border-radius: 18px;
+
+        background: #f8fafc;
+
+        border:
+            1px solid #e7edf4;
+
+        transition:
+            transform 0.22s ease,
+            border-color 0.22s ease,
+            box-shadow 0.22s ease;
+    }
+
+
+    .journey-timetable-card:hover {
+        transform: translateX(4px);
+
+        border-color:
+            rgba(37, 99, 235, 0.24);
+
+        box-shadow:
+            0 11px 26px
+            rgba(15, 23, 42, 0.06);
+    }
+
+
+    .journey-timetable-date small {
+        display: block;
+
+        color: #94a3b8;
+
+        font-size: 8px;
+        font-weight: 850;
+
+        letter-spacing: 0.7px;
+    }
+
+
+    .journey-timetable-date strong {
+        display: block;
+
+        margin-top: 4px;
+
+        color: #0f172a;
+
+        font-size: 12px;
+        font-weight: 850;
+    }
+
+
+    .journey-timetable-times {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+
+    .journey-time-box span {
+        display: block;
+
+        color: #94a3b8;
+
+        font-size: 8px;
+        font-weight: 800;
+    }
+
+
+    .journey-time-box strong {
+        display: block;
+
+        margin-top: 3px;
+
+        color: #0f172a;
+
+        font-size: 15px;
+        font-weight: 900;
+    }
+
+
+    .journey-time-arrow {
+        color: #93c5fd;
+
+        font-size: 17px;
+        font-weight: 900;
+    }
+
+
+    .journey-timetable-extra {
+        display: flex;
+        flex-wrap: wrap;
+
+        gap: 7px;
+
+        margin-top: 9px;
+    }
+
+
+    .journey-timetable-info-chip {
+        padding: 5px 7px;
+
+        border-radius: 8px;
+
+        color: #64748b;
+
+        background: #ffffff;
+
+        border:
+            1px solid #e2e8f0;
+
+        font-size: 8px;
+        font-weight: 750;
+    }
+
+
+    .journey-schedule-status {
+        min-width: 86px;
+
+        padding: 7px 9px;
+
+        text-align: center;
+
+        border-radius: 999px;
+
+        font-size: 9px;
+        font-weight: 850;
+    }
+
+
+    .journey-schedule-status.green {
+        color: #15803d;
+
+        background:
+            rgba(34, 197, 94, 0.10);
+    }
+
+
+    .journey-schedule-status.amber {
+        color: #b45309;
+
+        background:
+            rgba(245, 158, 11, 0.11);
+    }
+
+
+    .journey-schedule-status.red {
+        color: #b91c1c;
+
+        background:
+            rgba(239, 68, 68, 0.10);
+    }
+
+
+    .journey-schedule-status.blue {
+        color: #1d4ed8;
+
+        background:
+            rgba(37, 99, 235, 0.10);
+    }
+
+
+    .journey-schedule-status.purple {
+        color: #7c3aed;
+
+        background:
+            rgba(124, 58, 237, 0.10);
+    }
+
+
+    /* =========================================================
+       EMPTY STATE
+    ========================================================= */
+
+    .journey-empty {
+        min-height: 220px;
+
+        display: flex;
+        flex-direction: column;
+
+        align-items: center;
+        justify-content: center;
+
+        padding: 32px;
+
+        text-align: center;
+
+        border-radius: 18px;
+
+        background: #f8fafc;
+
+        border:
+            1px dashed #cbd5e1;
+    }
+
+
+    .journey-empty-icon {
+        width: 58px;
+        height: 58px;
+
+        display: grid;
+        place-items: center;
+
+        margin-bottom: 14px;
+
+        border-radius: 18px;
+
+        color: #2563eb;
+
+        background:
+            rgba(37, 99, 235, 0.09);
+    }
+
+
+    .journey-empty-icon svg {
+        width: 28px;
+        height: 28px;
+    }
+
+
+    .journey-empty h3 {
+        margin: 0;
+
+        color: #0f172a;
+
+        font-size: 16px;
+        font-weight: 900;
+    }
+
+
+    .journey-empty p {
+        max-width: 430px;
+
+        margin: 8px 0 0;
+
+        color: #64748b;
+
+        font-size: 10px;
+
+        line-height: 1.7;
+    }
+
+
+    /* =========================================================
+       DARK MODE
+    ========================================================= */
+
+    [data-theme="dark"]
+    .journey-back-btn,
+
+    [data-theme="dark"]
+    .journey-stat-card,
+
+    [data-theme="dark"]
+    .journey-card {
+        background: #0f1c2e;
+
+        border-color:
+            rgba(148, 163, 184, 0.14);
+    }
+
+
+    [data-theme="dark"]
+    .journey-stat-value,
+
+    [data-theme="dark"]
+    .journey-card-header h2,
+
+    [data-theme="dark"]
+    .journey-timeline-content strong,
+
+    [data-theme="dark"]
+    .journey-summary-item strong,
+
+    [data-theme="dark"]
+    .journey-timetable-date strong,
+
+    [data-theme="dark"]
+    .journey-time-box strong,
+
+    [data-theme="dark"]
+    .journey-empty h3 {
+        color: #f8fafc;
+    }
+
+
+    [data-theme="dark"]
+    .journey-summary-item,
+
+    [data-theme="dark"]
+    .journey-timetable-card,
+
+    [data-theme="dark"]
+    .journey-empty {
+        background: #132238;
+
+        border-color:
+            rgba(148, 163, 184, 0.14);
+    }
+
+
+    [data-theme="dark"]
+    .journey-timetable-info-chip {
+        color: #cbd5e1;
+
+        background: #0f1c2e;
+
+        border-color:
+            rgba(148, 163, 184, 0.14);
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @@media (max-width: 1180px) {
+
+        .journey-hero {
+            grid-template-columns: 1fr;
+        }
+
+
+        .journey-hero-visual {
+            display: none;
+        }
+
+
+        .journey-main-grid {
+            grid-template-columns: 1fr;
+        }
+
+
+        .journey-side-column {
+            position: static;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+        }
+    }
+
+
+    @@media (max-width: 930px) {
+
+        .journey-stats-grid {
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+        }
+
+
+        .journey-timetable-card {
+            grid-template-columns:
+                130px
+                minmax(0, 1fr);
+        }
+
+
+        .journey-schedule-status {
+            grid-column: 1 / -1;
+
+            justify-self: start;
+        }
+    }
+
+
+    @@media (max-width: 650px) {
+
+        .journey-top-actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+
+        .journey-top-action-group {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+
+
+        .journey-back-btn,
+        .journey-map-btn,
+        .journey-favorite-btn {
+            width: 100%;
+        }
+
+
+        .journey-favorite-form {
+            width: 100%;
+        }
+
+
+        .journey-hero {
+            min-height: auto;
+
+            padding: 32px 24px;
+        }
+
+
+        .journey-hero h1 {
+            font-size: 38px;
+        }
+
+
+        .journey-stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+
+        .journey-side-column {
+            grid-template-columns: 1fr;
+        }
+
+
+        .journey-card {
+            padding: 20px;
+        }
+
+
+        .journey-map {
+            height: 380px;
+            min-height: 380px;
+        }
+
+
+        .journey-map-loading,
+        .journey-map-error {
+            min-height: 380px;
+        }
+
+
+        .journey-timetable-card {
+            grid-template-columns: 1fr;
+        }
+
+
+        .journey-timetable-times {
+            justify-content: space-between;
+        }
+    }
+
+
+    @@media (prefers-reduced-motion: reduce) {
+
+        .journey-reveal,
+        .journey-live-dot,
+        .journey-hero::before,
+        .journey-hero::after,
+        .journey-visual-orbit,
+        .journey-moving-bus,
+        .journey-visual-info,
+        .journey-map-loading-dot {
+            animation: none !important;
+
+            opacity: 1 !important;
+
+            transform: none !important;
+        }
+    }
+
+    /* =========================================================
+    CRITICAL SVG ICON SIZE FIX
+    Prevent inline UI icons from expanding across the page
+    ========================================================= */
+
+    .journey-top-actions svg,
+    .journey-hero svg,
+    .journey-stats-grid svg,
+    .journey-card-header-icon svg,
+    .journey-summary-icon svg,
+    .journey-empty-icon svg,
+    .journey-timetable-card svg,
+    .journey-next-departure svg,
+    .journey-visual-info-icon svg,
+    .journey-moving-bus svg {
+        display: block !important;
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+        max-width: 20px !important;
+        max-height: 20px !important;
+        flex: 0 0 20px !important;
+        overflow: hidden !important;
+    }
+
+
+    /* Top action icons */
+
+    .journey-back-btn svg,
+    .journey-map-btn svg,
+    .journey-favorite-btn svg {
+        width: 17px !important;
+        height: 17px !important;
+        min-width: 17px !important;
+        min-height: 17px !important;
+        max-width: 17px !important;
+        max-height: 17px !important;
+    }
+
+
+    /* Hero direction arrow */
+
+    .journey-hero-direction svg {
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+        max-width: 20px !important;
+        max-height: 20px !important;
+    }
+
+
+    /* Hero badge icons */
+
+    .journey-hero-badge svg {
+        width: 14px !important;
+        height: 14px !important;
+        min-width: 14px !important;
+        min-height: 14px !important;
+        max-width: 14px !important;
+        max-height: 14px !important;
+    }
+
+
+    /* Animated bus icon */
+
+    .journey-moving-bus svg {
+        width: 29px !important;
+        height: 29px !important;
+        min-width: 29px !important;
+        min-height: 29px !important;
+        max-width: 29px !important;
+        max-height: 29px !important;
+    }
+
+
+    /* Journey statistic icons */
+
+    .journey-stat-icon {
+        width: 43px !important;
+        height: 43px !important;
+        min-width: 43px !important;
+        min-height: 43px !important;
+        max-width: 43px !important;
+        max-height: 43px !important;
+
+        display: grid !important;
+        place-items: center !important;
+
+        overflow: hidden !important;
+    }
+
+
+    .journey-stat-icon svg {
+        width: 21px !important;
+        height: 21px !important;
+        min-width: 21px !important;
+        min-height: 21px !important;
+        max-width: 21px !important;
+        max-height: 21px !important;
+    }
+
+
+    /* Card heading icons */
+
+    .journey-card-header-icon {
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+        max-width: 48px !important;
+        max-height: 48px !important;
+
+        display: grid !important;
+        place-items: center !important;
+
+        overflow: hidden !important;
+    }
+
+
+    .journey-card-header-icon svg {
+        width: 23px !important;
+        height: 23px !important;
+        min-width: 23px !important;
+        min-height: 23px !important;
+        max-width: 23px !important;
+        max-height: 23px !important;
+    }
+
+
+    /* Journey summary icons */
+
+    .journey-summary-icon {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        max-width: 40px !important;
+        max-height: 40px !important;
+
+        display: grid !important;
+        place-items: center !important;
+
+        overflow: hidden !important;
+    }
+
+
+    .journey-summary-icon svg {
+        width: 19px !important;
+        height: 19px !important;
+        min-width: 19px !important;
+        min-height: 19px !important;
+        max-width: 19px !important;
+        max-height: 19px !important;
+    }
+
+
+    /* Empty state icons */
+
+    .journey-empty-icon {
+        width: 58px !important;
+        height: 58px !important;
+        min-width: 58px !important;
+        min-height: 58px !important;
+        max-width: 58px !important;
+        max-height: 58px !important;
+
+        display: grid !important;
+        place-items: center !important;
+
+        overflow: hidden !important;
+    }
+
+
+    .journey-empty-icon svg {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        max-width: 28px !important;
+        max-height: 28px !important;
+    }
+
+
+    /* Animated hero floating information icon */
+
+    .journey-visual-info-icon {
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+        min-height: 42px !important;
+        max-width: 42px !important;
+        max-height: 42px !important;
+
+        display: grid !important;
+        place-items: center !important;
+
+        overflow: hidden !important;
+    }
+
+
+    .journey-visual-info-icon svg {
+        width: 22px !important;
+        height: 22px !important;
+        min-width: 22px !important;
+        min-height: 22px !important;
+        max-width: 22px !important;
+        max-height: 22px !important;
+    }
+
+
+    /* Protect every UI icon container */
+
+    .journey-stat-icon,
+    .journey-card-header-icon,
+    .journey-summary-icon,
+    .journey-empty-icon,
+    .journey-visual-info-icon,
+    .journey-moving-bus {
+        position: relative !important;
+        flex-shrink: 0 !important;
+    }
+
+
+    /* Important:
+    Do not apply global SVG sizing to the Leaflet map,
+    because Leaflet uses SVG internally for route lines.
+    */
+
+    #customerRouteMap svg {
+        max-width: none;
+        max-height: none;
+    }
+
+    .journey-details-page svg:not(.leaflet-zoom-animated) {
+    vertical-align: middle;
+    }
+
+</style>
+
+
+<div class="journey-details-page">
+
+
+    <!-- =====================================================
+         TOP ACTIONS
+    ====================================================== -->
+
+    <section class="journey-top-actions journey-reveal">
+
+        <a asp-controller="CustomerRoutes"
+           asp-action="Index"
+           class="journey-back-btn">
+
+            <svg viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="2"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 aria-hidden="true">
+
+                <path d="M19 12H5">
+                </path>
+
+                <path d="M11 18l-6-6 6-6">
+                </path>
+
+            </svg>
+
+            Back to Explore Routes
+
+        </a>
+
+
+        <div class="journey-top-action-group">
+
+
+            @if (isFavorite)
+            {
+                <form asp-controller="CustomerRoutes"
+                      asp-action="RemoveFavorite"
+                      method="post"
+                      class="journey-favorite-form">
+
+                    @Html.AntiForgeryToken()
+
+
+                    <input type="hidden"
+                           name="routeId"
+                           value="@Model.Id" />
+
+
+                    <input type="hidden"
+                           name="returnToDetails"
+                           value="true" />
+
+
+                    <button type="submit"
+                            class="journey-favorite-btn saved">
+
+                        <svg viewBox="0 0 24 24"
+                             fill="currentColor"
+                             stroke="currentColor"
+                             stroke-width="1.5"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true">
+
+                            <path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z">
+                            </path>
+
+                        </svg>
+
+                        Saved Route
+
+                    </button>
+
+                </form>
+            }
+            else
+            {
+                <form asp-controller="CustomerRoutes"
+                      asp-action="AddFavorite"
+                      method="post"
+                      class="journey-favorite-form">
+
+                    @Html.AntiForgeryToken()
+
+
+                    <input type="hidden"
+                           name="routeId"
+                           value="@Model.Id" />
+
+
+                    <input type="hidden"
+                           name="returnToDetails"
+                           value="true" />
+
+
+                    <button type="submit"
+                            class="journey-favorite-btn">
+
+                        <svg viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true">
+
+                            <path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z">
+                            </path>
+
+                        </svg>
+
+                        Save Route
+
+                    </button>
+
+                </form>
+            }
+
+
+            <a href="@mapUrl"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="journey-map-btn">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+
+                    <path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z">
+                    </path>
+
+                    <path d="M9 3v15">
+                    </path>
+
+                    <path d="M15 6v15">
+                    </path>
+
+                </svg>
+
+                Open in Google Maps
+
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         ALERTS
+    ====================================================== -->
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="journey-alert success">
+
+            @TempData["SuccessMessage"]
+
+        </div>
+    }
+
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="journey-alert warning">
+
+            @TempData["ErrorMessage"]
+
+        </div>
+    }
+
+
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
+
+    <section class="journey-hero journey-reveal"
+             style="--delay: 0.05s;">
+
+        <div class="journey-hero-copy">
+
+            <div class="journey-hero-eyebrow">
+
+                <span class="journey-live-dot"></span>
+
+                ACTIVE SRMSS JOURNEY
+
+            </div>
+
+
+            <h1>
+
+                @Model.RouteName
+
+            </h1>
+
+
+            <div class="journey-hero-direction">
+
+                <span>
+                    @Model.StartPoint
+                </span>
+
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+
+                    <path d="M5 12h14">
+                    </path>
+
+                    <path d="M13 6l6 6-6 6">
+                    </path>
+
+                </svg>
+
+
+                <span>
+                    @Model.EndPoint
+                </span>
+
+            </div>
+
+
+            <p class="journey-hero-description">
+
+                Explore every stop along this route, review upcoming
+                timetables, check assigned drivers and vehicles,
+                view current trip status and open the complete journey
+                on an interactive map.
+
+            </p>
+
+
+            <div class="journey-hero-badges">
+
+
+                <span class="journey-hero-badge">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         aria-hidden="true">
+
+                        <circle cx="12"
+                                cy="12"
+                                r="9">
+                        </circle>
+
+                        <path d="M12 7v5l3 2">
+                        </path>
+
+                    </svg>
+
+                    @Model.EstimatedDurationMinutes mins
+
+                </span>
+
+
+                <span class="journey-hero-badge">
+
+                    @Model.DistanceKm km
+
+                </span>
+
+
+                <span class="journey-hero-badge">
+
+                    @Model.ServiceType service
+
+                </span>
+
+
+                <span class="journey-hero-badge">
+
+                    @orderedStops.Count stops
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="journey-hero-visual">
+
+
+            <div class="journey-visual-orbit one">
+            </div>
+
+
+            <div class="journey-visual-orbit two">
+            </div>
+
+
+            <div class="journey-visual-track">
+
+
+                <div class="journey-moving-bus">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <rect x="4"
+                              y="3"
+                              width="16"
+                              height="15"
+                              rx="3">
+                        </rect>
+
+                        <path d="M4 10h16">
+                        </path>
+
+                        <path d="M8 18v2">
+                        </path>
+
+                        <path d="M16 18v2">
+                        </path>
+
+                        <circle cx="8"
+                                cy="15"
+                                r="1">
+                        </circle>
+
+                        <circle cx="16"
+                                cy="15"
+                                r="1">
+                        </circle>
+
+                    </svg>
+
+                </div>
+
+            </div>
+
+
+            <div class="journey-visual-pin start">
+            </div>
+
+
+            <div class="journey-visual-pin end">
+            </div>
+
+
+            <div class="journey-visual-info">
+
+                <div class="journey-visual-info-icon">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <path d="M5 17l4-4 3 3 7-8">
+                        </path>
+
+                        <path d="M14 8h5v5">
+                        </path>
+
+                    </svg>
+
+                </div>
+
+
+                <div>
+
+                    <small>
+                        ROUTE STATUS
+                    </small>
+
+                    <strong>
+                        @Model.Status
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         JOURNEY STATISTICS
+    ====================================================== -->
+
+    <section class="journey-stats-grid">
+
+
+        <article class="journey-stat-card journey-reveal"
+                 style="--delay: 0.10s;">
+
+            <div class="journey-stat-icon">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+
+                    <circle cx="6"
+                            cy="18"
+                            r="2">
+                    </circle>
+
+                    <circle cx="18"
+                            cy="6"
+                            r="2">
+                    </circle>
+
+                    <path d="M7.5 16.5c2-5 7-4 9-9">
+                    </path>
+
+                </svg>
+
+            </div>
+
+
+            <div class="journey-stat-value">
+                @Model.DistanceKm km
+            </div>
+
+
+            <span class="journey-stat-label">
+                Total route distance
+            </span>
+
+        </article>
+
+
+        <article class="journey-stat-card journey-reveal"
+                 style="--delay: 0.15s;">
+
+            <div class="journey-stat-icon">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+
+                    <circle cx="12"
+                            cy="12"
+                            r="9">
+                    </circle>
+
+                    <path d="M12 7v5l3 2">
+                    </path>
+
+                </svg>
+
+            </div>
+
+
+            <div class="journey-stat-value">
+                @Model.EstimatedDurationMinutes mins
+            </div>
+
+
+            <span class="journey-stat-label">
+                Estimated journey duration
+            </span>
+
+        </article>
+
+
+        <article class="journey-stat-card journey-reveal"
+                 style="--delay: 0.20s;">
+
+            <div class="journey-stat-icon">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+
+                    <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11z">
+                    </path>
+
+                    <circle cx="12"
+                            cy="10"
+                            r="2">
+                    </circle>
+
+                </svg>
+
+            </div>
+
+
+            <div class="journey-stat-value">
+                @orderedStops.Count
+            </div>
+
+
+            <span class="journey-stat-label">
+                Ordered intermediary stops
+            </span>
+
+        </article>
+
+
+        <article class="journey-stat-card journey-reveal"
+                 style="--delay: 0.25s;">
+
+            <div class="journey-stat-icon">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+
+                    <rect x="3"
+                          y="5"
+                          width="18"
+                          height="16"
+                          rx="3">
+                    </rect>
+
+                    <path d="M8 3v4">
+                    </path>
+
+                    <path d="M16 3v4">
+                    </path>
+
+                    <path d="M3 10h18">
+                    </path>
+
+                </svg>
+
+            </div>
+
+
+            <div class="journey-stat-value">
+                @upcomingSchedules.Count
+            </div>
+
+
+            <span class="journey-stat-label">
+                Upcoming schedules available
+            </span>
+
+        </article>
+
+    </section>
+
+
+    <!-- =====================================================
+         MAP + SIDEBAR
+    ====================================================== -->
+
+    <section class="journey-main-grid">
+
+
+        <div class="journey-main-column">
+
+
+            <!-- =============================================
+                 LIVE MAP
+            ============================================== -->
+
+            <article class="journey-card journey-reveal"
+                     style="--delay: 0.30s;">
+
+                <div class="journey-card-header">
+
+                    <div>
+
+                        <span class="journey-card-eyebrow">
+                            INTERACTIVE JOURNEY MAP
+                        </span>
+
+
+                        <h2>
+                            Explore the complete route
+                        </h2>
+
+
+                        <p>
+
+                            View the departure point, ordered route stops
+                            and final destination on the live map.
+
+                        </p>
+
+                    </div>
+
+
+                    <div class="journey-card-header-icon">
+
+                        <svg viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true">
+
+                            <path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z">
+                            </path>
+
+                            <path d="M9 3v15">
+                            </path>
+
+                            <path d="M15 6v15">
+                            </path>
+
+                        </svg>
+
+                    </div>
+
+                </div>
+
+
+                <div class="journey-map-shell">
+
+                    <div id="customerRouteMap"
+                         class="journey-map">
+
+                        <div class="journey-map-loading">
+
+                            <span class="journey-map-loading-dot">
+                            </span>
+
+                            Loading interactive journey map...
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div id="missingCustomerRoutePoints">
+                </div>
+
+
+                <div class="journey-map-footer">
+
+                    <p>
+
+                        Route lines are generated using mapped journey
+                        points and available online road routing services.
+
+                    </p>
+
+
+                    <a href="@mapUrl"
+                       target="_blank"
+                       rel="noopener noreferrer">
+
+                        Open full route in Google Maps
+
+                    </a>
+
+                </div>
+
+            </article>
+
+
+            <!-- =============================================
+                 COMPLETE STOP TIMELINE
+            ============================================== -->
+
+            <article class="journey-card journey-reveal"
+                     style="--delay: 0.35s;">
+
+                <div class="journey-card-header">
+
+                    <div>
+
+                        <span class="journey-card-eyebrow">
+                            COMPLETE ROUTE FLOW
+                        </span>
+
+
+                        <h2>
+                            Follow every stop
+                        </h2>
+
+
+                        <p>
+
+                            The complete journey is displayed in order,
+                            from departure point to final destination.
+
+                        </p>
+
+                    </div>
+
+
+                    <div class="journey-card-header-icon">
+
+                        <svg viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true">
+
+                            <path d="M6 4v16">
+                            </path>
+
+                            <circle cx="6"
+                                    cy="5"
+                                    r="2">
+                            </circle>
+
+                            <circle cx="6"
+                                    cy="12"
+                                    r="2">
+                            </circle>
+
+                            <circle cx="6"
+                                    cy="19"
+                                    r="2">
+                            </circle>
+
+                            <path d="M10 5h8">
+                            </path>
+
+                            <path d="M10 12h8">
+                            </path>
+
+                            <path d="M10 19h8">
+                            </path>
+
+                        </svg>
+
+                    </div>
+
+                </div>
+
+
+                <div class="journey-timeline">
+
+
+                    <!-- Start -->
+
+                    <div class="journey-timeline-item">
+
+                        <div class="journey-timeline-left">
+
+                            <div class="journey-timeline-node start">
+                                S
+                            </div>
+
+                            <div class="journey-timeline-line">
+                            </div>
+
+                        </div>
+
+
+                        <div class="journey-timeline-content">
+
+                            <small>
+                                START POINT
+                            </small>
+
+                            <strong>
+                                @Model.StartPoint
+                            </strong>
+
+                            <span>
+                                Your journey begins here.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Stops -->
+
+                    @foreach (var stop in orderedStops)
+                    {
+                        <div class="journey-timeline-item">
+
+                            <div class="journey-timeline-left">
+
+                                <div class="journey-timeline-node stop">
+
+                                    @stop.StopOrder
+
+                                </div>
+
+                                <div class="journey-timeline-line">
+                                </div>
+
+                            </div>
+
+
+                            <div class="journey-timeline-content">
+
+                                <small>
+
+                                    ROUTE STOP @stop.StopOrder
+
+                                </small>
+
+                                <strong>
+
+                                    @stop.StopName
+
+                                </strong>
+
+                                <span>
+
+                                    @stop.EstimatedMinutesFromStart
+                                    mins from the route start
+
+                                </span>
+
+                            </div>
+
+                        </div>
+                    }
+
+
+                    <!-- End -->
+
+                    <div class="journey-timeline-item">
+
+                        <div class="journey-timeline-left">
+
+                            <div class="journey-timeline-node end">
+                                E
+                            </div>
+
+                        </div>
+
+
+                        <div class="journey-timeline-content">
+
+                            <small>
+                                FINAL DESTINATION
+                            </small>
+
+                            <strong>
+                                @Model.EndPoint
+                            </strong>
+
+                            <span>
+                                Journey destination reached.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+        </div>
+
+
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
+
+        <aside class="journey-side-column">
+
+
+            <!-- Journey Summary -->
+
+            <article class="journey-card journey-reveal"
+                     style="--delay: 0.32s;">
+
+                <div class="journey-card-header">
+
+                    <div>
+
+                        <span class="journey-card-eyebrow">
+                            JOURNEY SUMMARY
+                        </span>
+
+                        <h2>
+                            Route information
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="journey-summary-list">
+
+
+                    <div class="journey-summary-item">
+
+                        <div class="journey-summary-icon">
+
+                            <svg viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                                 aria-hidden="true">
+
+                                <path d="M5 12h14">
+                                </path>
+
+                                <path d="M13 6l6 6-6 6">
+                                </path>
+
+                            </svg>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Journey
+                            </span>
+
+                            <strong>
+
+                                @Model.StartPoint
+                                to
+                                @Model.EndPoint
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="journey-summary-item">
+
+                        <div class="journey-summary-icon">
+
+                            <svg viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                                 aria-hidden="true">
+
+                                <circle cx="12"
+                                        cy="12"
+                                        r="9">
+                                </circle>
+
+                                <path d="M12 7v5l3 2">
+                                </path>
+
+                            </svg>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Duration
+                            </span>
+
+                            <strong>
+                                @Model.EstimatedDurationMinutes minutes
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="journey-summary-item">
+
+                        <div class="journey-summary-icon">
+
+                            <svg viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                                 aria-hidden="true">
+
+                                <circle cx="6"
+                                        cy="18"
+                                        r="2">
+                                </circle>
+
+                                <circle cx="18"
+                                        cy="6"
+                                        r="2">
+                                </circle>
+
+                                <path d="M7.5 16.5c2-5 7-4 9-9">
+                                </path>
+
+                            </svg>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Distance
+                            </span>
+
+                            <strong>
+                                @Model.DistanceKm km
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="journey-summary-item">
+
+                        <div class="journey-summary-icon">
+
+                            <svg viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                                 aria-hidden="true">
+
+                                <path d="M4 7h16">
+                                </path>
+
+                                <path d="M6 12h12">
+                                </path>
+
+                                <path d="M8 17h8">
+                                </path>
+
+                            </svg>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Service Type
+                            </span>
+
+                            <strong>
+                                @Model.ServiceType
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="journey-summary-item">
+
+                        <div class="journey-summary-icon">
+
+                            <svg viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                                 aria-hidden="true">
+
+                                <circle cx="12"
+                                        cy="12"
+                                        r="9">
+                                </circle>
+
+                                <path d="M8 12l3 3 5-6">
+                                </path>
+
+                            </svg>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Route Status
+                            </span>
+
+                            <strong>
+                                @Model.Status
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- Next Departure -->
+
+            @if (nextSchedule != null)
+            {
+                <article class="journey-next-departure journey-reveal"
+                         style="--delay: 0.38s;">
+
+                    <div class="journey-next-departure-eyebrow">
+
+                        NEXT AVAILABLE DEPARTURE
+
+                    </div>
+
+
+                    <h3>
+
+                        Your next journey opportunity
+
+                    </h3>
+
+
+                    <div class="journey-next-departure-date">
+
+                        @nextSchedule.ScheduleDate
+                            .ToString("dddd, dd MMMM yyyy")
+
+                    </div>
+
+
+                    <div class="journey-next-departure-time">
+
+                        @(nextSchedule.DepartureTime.ToString(@"hh\:mm"))
+
+                        <span>
+                            &rarr;
+                        </span>
+
+                        @(nextSchedule.ArrivalTime.ToString(@"hh\:mm"))
+
+                    </div>
+
+
+                    <span class="journey-next-departure-status">
+
+                        @nextSchedule.Status
+
+                    </span>
+
+                </article>
+            }
+            else
+            {
+                <article class="journey-card journey-reveal"
+                         style="--delay: 0.38s;">
+
+                    <div class="journey-empty"
+                         style="min-height: 210px;">
+
+                        <div class="journey-empty-icon">
+
+                            <svg viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                                 aria-hidden="true">
+
+                                <rect x="3"
+                                      y="5"
+                                      width="18"
+                                      height="16"
+                                      rx="3">
+                                </rect>
+
+                                <path d="M8 3v4">
+                                </path>
+
+                                <path d="M16 3v4">
+                                </path>
+
+                                <path d="M3 10h18">
+                                </path>
+
+                            </svg>
+
+                        </div>
+
+
+                        <h3>
+                            No upcoming departures
+                        </h3>
+
+
+                        <p>
+
+                            No future timetable has been published
+                            for this route yet.
+
+                        </p>
+
+                    </div>
+
+                </article>
+            }
+
+        </aside>
+
+    </section>
+
+
+    <!-- =====================================================
+         TIMETABLE
+    ====================================================== -->
+
+    <section class="journey-card journey-reveal"
+             style="--delay: 0.42s;">
+
+        <div class="journey-card-header">
+
+            <div>
+
+                <span class="journey-card-eyebrow">
+                    PUBLIC TIMETABLE
+                </span>
+
+
+                <h2>
+                    Schedules and current trip status
+                </h2>
+
+
+                <p>
+
+                    Review departure times, arrival times,
+                    assigned drivers, vehicles and live operational status.
+
+                </p>
+
+            </div>
+
+
+            <div class="journey-card-header-icon">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+
+                    <rect x="3"
+                          y="5"
+                          width="18"
+                          height="16"
+                          rx="3">
+                    </rect>
+
+                    <path d="M8 3v4">
+                    </path>
+
+                    <path d="M16 3v4">
+                    </path>
+
+                    <path d="M3 10h18">
+                    </path>
+
+                </svg>
+
+            </div>
+
+        </div>
+
+
+        @if (schedules.Any())
+        {
+            <div class="journey-timetable-list">
+
+                @foreach (var schedule in schedules)
+                {
+                    string scheduleStatusClass =
+                        schedule.Status == "Delayed"
+                            ? "amber"
+                            : schedule.Status == "Cancelled"
+                                ? "red"
+                                : schedule.Status == "Completed"
+                                    ? "blue"
+                                    : schedule.Status == "Departed"
+                                        ? "purple"
+                                        : "green";
+
+
+                    <article class="journey-timetable-card">
+
+
+                        <div class="journey-timetable-date">
+
+                            <small>
+                                JOURNEY DATE
+                            </small>
+
+                            <strong>
+
+                                @schedule.ScheduleDate.ToString("dd MMM yyyy")
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <div class="journey-timetable-times">
+
+
+                                <div class="journey-time-box">
+
+                                    <span>
+                                        Departure
+                                    </span>
+
+                                    <strong>
+
+                                        @(schedule.DepartureTime.ToString(@"hh\:mm"))
+
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="journey-time-arrow">
+                                    &rarr;
+                                </div>
+
+
+                                <div class="journey-time-box">
+
+                                    <span>
+                                        Arrival
+                                    </span>
+
+                                    <strong>
+
+                                        @(schedule.ArrivalTime.ToString(@"hh\:mm"))
+
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="journey-timetable-extra">
+
+                                <span class="journey-timetable-info-chip">
+
+                                    Driver:
+                                    @(schedule.Driver?.FullName
+                                        ?? "Not assigned")
+
+                                </span>
+
+
+                                <span class="journey-timetable-info-chip">
+
+                                    Vehicle:
+                                    @(schedule.Vehicle?.RegistrationNumber
+                                        ?? "Not assigned")
+
+                                </span>
+
+
+                                @if (
+                                    !string.IsNullOrWhiteSpace(
+                                        schedule.Notes
+                                    )
+                                )
+                                {
+                                    <span class="journey-timetable-info-chip">
+
+                                        Note:
+                                        @schedule.Notes
+
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+
+
+                        <span class="journey-schedule-status @scheduleStatusClass">
+
+                            @schedule.Status
+
+                        </span>
+
+                    </article>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="journey-empty">
+
+                <div class="journey-empty-icon">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <rect x="3"
+                              y="5"
+                              width="18"
+                              height="16"
+                              rx="3">
+                        </rect>
+
+                        <path d="M8 3v4">
+                        </path>
+
+                        <path d="M16 3v4">
+                        </path>
+
+                        <path d="M3 10h18">
+                        </path>
+
+                    </svg>
+
+                </div>
+
+
+                <h3>
+                    No schedules available
+                </h3>
+
+
+                <p>
+
+                    No public timetables have been published
+                    for this route yet.
+
+                </p>
+
+            </div>
+        }
+
+    </section>
+
+</div>
+
+
+@section Scripts {
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                const route =
+                    @Html.Raw(routeDataJson);
+
+
+                const geocodeCache =
+                    {};
+
+
+                const knownPlaceCoordinates = {
+
+                    "colombo": {
+                        lat: 6.9271,
+                        lng: 79.8612
+                    },
+
+                    "colombo fort": {
+                        lat: 6.9344,
+                        lng: 79.8428
+                    },
+
+                    "peliyagoda": {
+                        lat: 6.9608,
+                        lng: 79.8780
+                    },
+
+                    "kadawatha": {
+                        lat: 7.0013,
+                        lng: 79.9507
+                    },
+
+                    "nittambuwa": {
+                        lat: 7.1440,
+                        lng: 80.0964
+                    },
+
+                    "warakapola": {
+                        lat: 7.2260,
+                        lng: 80.1950
+                    },
+
+                    "kegalle": {
+                        lat: 7.2513,
+                        lng: 80.3464
+                    },
+
+                    "mawanella": {
+                        lat: 7.2533,
+                        lng: 80.4465
+                    },
+
+                    "kadugannawa": {
+                        lat: 7.2536,
+                        lng: 80.5271
+                    },
+
+                    "peradeniya": {
+                        lat: 7.2667,
+                        lng: 80.5964
+                    },
+
+                    "kandy": {
+                        lat: 7.2906,
+                        lng: 80.6337
+                    },
+
+                    "dehiwala": {
+                        lat: 6.8512,
+                        lng: 79.8652
+                    },
+
+                    "moratuwa": {
+                        lat: 6.7730,
+                        lng: 79.8816
+                    },
+
+                    "panadura": {
+                        lat: 6.7132,
+                        lng: 79.9026
+                    },
+
+                    "kalutara": {
+                        lat: 6.5854,
+                        lng: 79.9607
+                    },
+
+                    "aluthgama": {
+                        lat: 6.4337,
+                        lng: 80.0002
+                    },
+
+                    "bentota": {
+                        lat: 6.4211,
+                        lng: 80.0003
+                    },
+
+                    "ambalangoda": {
+                        lat: 6.2355,
+                        lng: 80.0538
+                    },
+
+                    "hikkaduwa": {
+                        lat: 6.1407,
+                        lng: 80.1012
+                    },
+
+                    "galle": {
+                        lat: 6.0329,
+                        lng: 80.2168
+                    },
+
+                    "weligama": {
+                        lat: 5.9730,
+                        lng: 80.4297
+                    },
+
+                    "matara": {
+                        lat: 5.9549,
+                        lng: 80.5550
+                    },
+
+                    "kollupitiya": {
+                        lat: 6.9114,
+                        lng: 79.8487
+                    },
+
+                    "bambalapitiya": {
+                        lat: 6.8936,
+                        lng: 79.8554
+                    },
+
+                    "wellawatte": {
+                        lat: 6.8747,
+                        lng: 79.8605
+                    },
+
+                    "mount lavinia": {
+                        lat: 6.8389,
+                        lng: 79.8653
+                    },
+
+                    "ratmalana": {
+                        lat: 6.8198,
+                        lng: 79.8816
+                    }
+
+                };
+
+
+                function escapeHtml(value) {
+
+                    if (
+                        value === null ||
+                        value === undefined
+                    ) {
+                        return "";
+                    }
+
+
+                    return String(value)
+
+                        .replaceAll(
+                            "&",
+                            "&amp;"
+                        )
+
+                        .replaceAll(
+                            "<",
+                            "&lt;"
+                        )
+
+                        .replaceAll(
+                            ">",
+                            "&gt;"
+                        )
+
+                        .replaceAll(
+                            '"',
+                            "&quot;"
+                        )
+
+                        .replaceAll(
+                            "'",
+                            "&#039;"
+                        );
+                }
+
+
+                function normalizePlaceName(value) {
+
+                    return String(value ?? "")
+
+                        .trim()
+
+                        .toLowerCase()
+
+                        .replace(
+                            /\s+/g,
+                            " "
+                        );
+                }
+
+
+                async function fetchWithTimeout(
+                    url,
+                    options = {},
+                    timeoutMilliseconds = 10000
+                ) {
+
+                    const controller =
+                        new AbortController();
+
+
+                    const timeout =
+                        setTimeout(
+                            function () {
+
+                                controller.abort();
+
+                            },
+                            timeoutMilliseconds
+                        );
+
+
+                    try {
+
+                        return await fetch(
+                            url,
+                            {
+                                ...options,
+
+                                signal:
+                                    controller.signal
+                            }
+                        );
+
+                    }
+                    finally {
+
+                        clearTimeout(timeout);
+                    }
+                }
+
+
+                async function geocodePlace(placeName) {
+
+                    if (!placeName) {
+                        return null;
+                    }
+
+
+                    const cleanPlaceName =
+                        String(placeName).trim();
+
+
+                    const key =
+                        normalizePlaceName(
+                            cleanPlaceName
+                        );
+
+
+                    if (!key) {
+                        return null;
+                    }
+
+
+                    if (geocodeCache[key]) {
+
+                        return geocodeCache[key];
+                    }
+
+
+                    if (knownPlaceCoordinates[key]) {
+
+                        const localPoint = {
+
+                            lat:
+                                knownPlaceCoordinates[key].lat,
+
+                            lng:
+                                knownPlaceCoordinates[key].lng,
+
+                            label:
+                                cleanPlaceName
+                        };
+
+
+                        geocodeCache[key] =
+                            localPoint;
+
+
+                        return localPoint;
+                    }
+
+
+                    const query =
+                        encodeURIComponent(
+                            cleanPlaceName +
+                            ", Sri Lanka"
+                        );
+
+
+                    const url =
+                        "https://nominatim.openstreetmap.org/search"
+
+                        + "?format=json"
+
+                        + "&limit=1"
+
+                        + "&countrycodes=lk"
+
+                        + "&addressdetails=1"
+
+                        + `&q=${query}`;
+
+
+                    try {
+
+                        const response =
+                            await fetchWithTimeout(
+                                url,
+                                {
+                                    headers: {
+                                        "Accept":
+                                            "application/json"
+                                    }
+                                },
+                                8000
+                            );
+
+
+                        if (!response.ok) {
+                            return null;
+                        }
+
+
+                        const data =
+                            await response.json();
+
+
+                        if (
+                            !data ||
+                            data.length === 0
+                        ) {
+                            return null;
+                        }
+
+
+                        const selectedResult =
+                            data[0];
+
+
+                        const point = {
+
+                            lat:
+                                parseFloat(
+                                    selectedResult.lat
+                                ),
+
+                            lng:
+                                parseFloat(
+                                    selectedResult.lon
+                                ),
+
+                            label:
+                                cleanPlaceName
+                        };
+
+
+                        geocodeCache[key] =
+                            point;
+
+
+                        return point;
+
+                    }
+                    catch (error) {
+
+                        console.warn(
+                            "Geocoding failed:",
+                            cleanPlaceName,
+                            error
+                        );
+
+
+                        return null;
+                    }
+                }
+
+
+                async function buildRouteCoordinates(
+                    routeData
+                ) {
+
+                    const rawRoutePoints =
+                        [];
+
+
+                    rawRoutePoints.push({
+
+                        placeName:
+                            routeData.startPoint,
+
+                        markerLabel:
+                            "S",
+
+                        markerType:
+                            "start",
+
+                        tooltipText:
+                            "Start Point: " +
+                            routeData.startPoint
+                    });
+
+
+                    if (
+                        routeData.stops &&
+                        routeData.stops.length > 0
+                    ) {
+
+                        routeData.stops.forEach(
+                            function (stop, index) {
+
+                                rawRoutePoints.push({
+
+                                    placeName:
+                                        stop.stopName,
+
+                                    markerLabel:
+                                        (
+                                            index + 1
+                                        ).toString(),
+
+                                    markerType:
+                                        "stop",
+
+                                    tooltipText:
+                                        "Stop " +
+                                        (
+                                            index + 1
+                                        ) +
+                                        ": " +
+                                        stop.stopName
+                                });
+
+                            }
+                        );
+                    }
+
+
+                    rawRoutePoints.push({
+
+                        placeName:
+                            routeData.endPoint,
+
+                        markerLabel:
+                            "E",
+
+                        markerType:
+                            "end",
+
+                        tooltipText:
+                            "End Point: " +
+                            routeData.endPoint
+                    });
+
+
+                    const routePoints =
+                        [];
+
+
+                    const usedPlaces =
+                        new Set();
+
+
+                    rawRoutePoints.forEach(
+                        function (point) {
+
+                            const key =
+                                normalizePlaceName(
+                                    point.placeName
+                                );
+
+
+                            if (
+                                !key ||
+                                usedPlaces.has(key)
+                            ) {
+                                return;
+                            }
+
+
+                            usedPlaces.add(key);
+
+                            routePoints.push(point);
+
+                        }
+                    );
+
+
+                    const coordinates =
+                        [];
+
+
+                    const missingPoints =
+                        [];
+
+
+                    for (
+                        const routePoint
+                        of routePoints
+                    ) {
+
+                        const result =
+                            await geocodePlace(
+                                routePoint.placeName
+                            );
+
+
+                        if (result) {
+
+                            coordinates.push({
+
+                                lat:
+                                    result.lat,
+
+                                lng:
+                                    result.lng,
+
+                                markerLabel:
+                                    routePoint.markerLabel,
+
+                                markerType:
+                                    routePoint.markerType,
+
+                                tooltipText:
+                                    routePoint.tooltipText
+                            });
+
+                        }
+                        else {
+
+                            missingPoints.push(
+                                routePoint.tooltipText
+                            );
+                        }
+                    }
+
+
+                    return {
+                        coordinates,
+                        missingPoints
+                    };
+                }
+
+
+                async function drawRouteLine(
+                    map,
+                    coordinates
+                ) {
+
+                    if (coordinates.length < 2) {
+                        return;
+                    }
+
+
+                    const osrmCoordinates =
+                        coordinates
+
+                            .map(
+                                point =>
+                                    `${point.lng},${point.lat}`
+                            )
+
+                            .join(";");
+
+
+                    const osrmUrl =
+                        "https://router.project-osrm.org/route/v1/driving/"
+
+                        + osrmCoordinates
+
+                        + "?overview=full"
+
+                        + "&geometries=geojson";
+
+
+                    try {
+
+                        const response =
+                            await fetchWithTimeout(
+                                osrmUrl,
+                                {},
+                                12000
+                            );
+
+
+                        if (response.ok) {
+
+                            const data =
+                                await response.json();
+
+
+                            if (
+                                data.routes &&
+                                data.routes.length > 0
+                            ) {
+
+                                const routeGeoJson =
+                                    data.routes[0]
+                                        .geometry;
+
+
+                                const routeLine =
+                                    L.geoJSON(
+                                        routeGeoJson,
+                                        {
+                                            style: {
+
+                                                color:
+                                                    "#2563eb",
+
+                                                weight:
+                                                    5,
+
+                                                opacity:
+                                                    0.9
+                                            }
+                                        }
+                                    )
+                                    .addTo(map);
+
+
+                                map.fitBounds(
+                                    routeLine.getBounds(),
+                                    {
+                                        padding:
+                                            [40, 40]
+                                    }
+                                );
+
+
+                                return;
+                            }
+                        }
+
+                    }
+                    catch (error) {
+
+                        console.warn(
+                            "Online route service failed. Using fallback.",
+                            error
+                        );
+                    }
+
+
+                    const fallbackLine =
+                        L.polyline(
+                            coordinates.map(
+                                point => [
+                                    point.lat,
+                                    point.lng
+                                ]
+                            ),
+                            {
+                                color:
+                                    "#2563eb",
+
+                                weight:
+                                    5,
+
+                                opacity:
+                                    0.85,
+
+                                dashArray:
+                                    "8 8"
+                            }
+                        )
+                        .addTo(map);
+
+
+                    map.fitBounds(
+                        fallbackLine.getBounds(),
+                        {
+                            padding:
+                                [40, 40]
+                        }
+                    );
+                }
+
+
+                function createRouteMarkerIcon(
+                    label,
+                    markerType
+                ) {
+
+                    return L.divIcon({
+
+                        className:
+                            "custom-route-marker",
+
+                        html:
+                            `<div class="route-marker ${markerType}">${escapeHtml(label)}</div>`,
+
+                        iconSize:
+                            [34, 34],
+
+                        iconAnchor:
+                            [17, 17],
+
+                        popupAnchor:
+                            [0, -18]
+                    });
+                }
+
+
+                async function renderCustomerRouteMap() {
+
+                    const mapElement =
+                        document.getElementById(
+                            "customerRouteMap"
+                        );
+
+
+                    const missingArea =
+                        document.getElementById(
+                            "missingCustomerRoutePoints"
+                        );
+
+
+                    if (!mapElement) {
+                        return;
+                    }
+
+
+                    if (
+                        typeof L === "undefined"
+                    ) {
+
+                        mapElement.innerHTML = `
+                            <div class="journey-map-error">
+
+                                The map library could not be loaded.
+                                Check your internet connection
+                                and refresh the page.
+
+                            </div>
+                        `;
+
+
+                        return;
+                    }
+
+
+                    const map =
+                        L.map(
+                            "customerRouteMap",
+                            {
+                                zoomControl:
+                                    true,
+
+                                preferCanvas:
+                                    true
+                            }
+                        );
+
+
+                    map.setView(
+                        [
+                            7.8731,
+                            80.7718
+                        ],
+                        7
+                    );
+
+
+                    L.tileLayer(
+                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                        {
+                            maxZoom:
+                                19,
+
+                            attribution:
+                                "&copy; OpenStreetMap contributors"
+                        }
+                    )
+                    .addTo(map);
+
+
+                    const result =
+                        await buildRouteCoordinates(
+                            route
+                        );
+
+
+                    const coordinates =
+                        result.coordinates;
+
+
+                    const missingPoints =
+                        result.missingPoints;
+
+
+                    if (
+                        missingArea &&
+                        missingPoints.length > 0
+                    ) {
+
+                        missingArea.innerHTML = `
+                            <div class="journey-map-warning">
+
+                                ${missingPoints.length}
+                                route point(s) could not be located
+                                automatically on the map.
+
+                            </div>
+                        `;
+                    }
+
+
+                    if (coordinates.length === 0) {
+
+                        map.remove();
+
+
+                        mapElement.innerHTML = `
+                            <div class="journey-map-error">
+
+                                Map coordinates could not be found
+                                for this route.
+
+                            </div>
+                        `;
+
+
+                        return;
+                    }
+
+
+                    coordinates.forEach(
+                        function (point) {
+
+                            L.marker(
+                                [
+                                    point.lat,
+                                    point.lng
+                                ],
+                                {
+                                    icon:
+                                        createRouteMarkerIcon(
+                                            point.markerLabel,
+                                            point.markerType
+                                        )
+                                }
+                            )
+
+                            .addTo(map)
+
+                            .bindTooltip(
+                                escapeHtml(
+                                    point.tooltipText
+                                ),
+                                {
+                                    permanent:
+                                        false,
+
+                                    direction:
+                                        "top",
+
+                                    offset:
+                                        [0, -22],
+
+                                    className:
+                                        "route-marker-tooltip"
+                                }
+                            )
+
+                            .bindPopup(
+                                `<strong>${escapeHtml(point.tooltipText)}</strong>`
+                            );
+
+                        }
+                    );
+
+
+                    await drawRouteLine(
+                        map,
+                        coordinates
+                    );
+
+
+                    if (coordinates.length === 1) {
+
+                        map.setView(
+                            [
+                                coordinates[0].lat,
+                                coordinates[0].lng
+                            ],
+                            12
+                        );
+
+                    }
+                    else {
+
+                        const markerBounds =
+                            L.latLngBounds(
+                                coordinates.map(
+                                    point => [
+                                        point.lat,
+                                        point.lng
+                                    ]
+                                )
+                            );
+
+
+                        map.fitBounds(
+                            markerBounds,
+                            {
+                                paddingTopLeft:
+                                    [60, 60],
+
+                                paddingBottomRight:
+                                    [60, 60],
+
+                                maxZoom:
+                                    11
+                            }
+                        );
+                    }
+
+
+                    setTimeout(
+                        function () {
+
+                            map.invalidateSize();
+
+                        },
+                        300
+                    );
+
+
+                    window.addEventListener(
+                        "resize",
+                        function () {
+
+                            map.invalidateSize();
+
+                        }
+                    );
+                }
+
+
+                renderCustomerRouteMap();
+
+            }
+        );
+
+    </script>
+}
+
+

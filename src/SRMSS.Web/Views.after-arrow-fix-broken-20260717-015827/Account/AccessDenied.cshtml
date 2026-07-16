@@ -1,0 +1,88 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Access Denied - SRMSS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #06111f, #0b2447, #123c69);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+        }
+
+        .card {
+            width: 520px;
+            max-width: 92%;
+            background: #f8fafc;
+            border-radius: 28px;
+            padding: 42px;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+        }
+
+        .icon {
+            width: 82px;
+            height: 82px;
+            border-radius: 50%;
+            background: #fee2e2;
+            color: #991b1b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            font-weight: 900;
+            margin: 0 auto 22px;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            color: #06111f;
+            font-size: 34px;
+        }
+
+        p {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        a {
+            display: inline-block;
+            padding: 14px 18px;
+            border-radius: 14px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        a:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">!</div>
+        <h1>Access Denied</h1>
+        <p>
+            You do not have permission to access this page.
+            Please login with an authorized SRMSS account.
+        </p>
+        <a href="/Dashboard">Back to Dashboard</a>
+    </div>
+</body>
+</html>
+
+

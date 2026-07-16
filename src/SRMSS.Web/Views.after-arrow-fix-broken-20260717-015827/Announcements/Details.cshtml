@@ -1,0 +1,51 @@
+﻿@model SRMSS.Web.Models.Announcement
+
+@{
+    ViewData["Title"] = "Announcement Details";
+    ViewData["PageTitle"] = "Announcement Details";
+    ViewData["PageSubtitle"] = "Full announcement message and publication metadata.";
+    bool canManage = ViewBag.CanManage == true;
+}
+
+<div class="module-hero announcement-hero mb-4">
+    <div>
+        <span class="module-kicker">@Model.Priority Announcement</span>
+        <h2>@Model.Title</h2>
+        <p>Audience: @Model.Audience | Published: @Model.PublishDate.ToString("dd MMM yyyy")</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a asp-action="Index" class="srmss-btn secondary">Back</a>
+        @if (canManage)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="srmss-btn primary">Edit</a>
+        }
+    </div>
+</div>
+
+<div class="srmss-card announcement-detail-card">
+    <div class="announcement-card-top">
+        <span class="status-pill blue">@Model.Audience</span>
+        <span class="status-pill amber">@Model.Priority</span>
+        <span class="status-pill green">@Model.Status</span>
+    </div>
+    <p>@Model.Message</p>
+</div>
+
+<div class="enterprise-detail-grid mt-4">
+    <div class="srmss-card">
+        <h3 class="card-title">Publication</h3>
+        <div class="detail-list">
+            <div><span>Publish Date</span><strong>@Model.PublishDate.ToString("dd MMM yyyy")</strong></div>
+            <div><span>Expiry Date</span><strong>@(Model.ExpiryDate?.ToString("dd MMM yyyy") ?? "No expiry")</strong></div>
+            <div><span>Created By</span><strong>@(Model.CreatedBy ?? "System")</strong></div>
+            <div><span>Created At</span><strong>@Model.CreatedAt.ToString("dd MMM yyyy HH:mm")</strong></div>
+        </div>
+    </div>
+    <div class="srmss-card amber">
+        <h3 class="card-title">Visibility</h3>
+        <p class="card-subtitle">This announcement is visible to @Model.Audience audience when status is Published and date rules are active.</p>
+    </div>
+</div>
+
+
+

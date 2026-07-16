@@ -1,4 +1,4 @@
-@model SRMSS.Web.Models.Announcement
+﻿@model SRMSS.Web.Models.Announcement
 
 @{
     bool isEdit = Model.Id > 0;
@@ -82,4 +82,5 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
+
 

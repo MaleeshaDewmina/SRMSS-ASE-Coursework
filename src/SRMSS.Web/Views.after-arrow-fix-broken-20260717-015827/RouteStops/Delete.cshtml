@@ -1,0 +1,86 @@
+﻿@model SRMSS.Web.Models.RouteStop
+
+@{
+    ViewData["Title"] = "Delete Route Stop";
+    ViewData["PageTitle"] = "Delete Route Stop";
+    ViewData["PageSubtitle"] = "Confirm before removing this stop from the route flow.";
+}
+
+<div class="route-editor-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Delete Confirmation</h3>
+        <p class="card-subtitle">
+            Please review the stop details before deleting it.
+        </p>
+
+        <div class="validation-panel">
+            <h3>Warning</h3>
+            <p>
+                This action will remove the selected stop from the route sequence.
+            </p>
+        </div>
+
+        <div class="details-list">
+            <div class="details-row">
+                <span>Route</span>
+                <strong>@(Model.TransportRoute?.RouteName ?? "Unknown Route")</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Stop Name</span>
+                <strong>@Model.StopName</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Stop Order</span>
+                <strong>@Model.StopOrder</strong>
+            </div>
+
+            <div class="details-row">
+                <span>Estimated Minutes From Start</span>
+                <strong>@Model.EstimatedMinutesFromStart mins</strong>
+            </div>
+        </div>
+
+        <form asp-action="Delete" class="mt-4">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="d-flex gap-3 flex-wrap">
+                <button type="submit" class="srmss-btn danger">
+                    Delete Stop
+                </button>
+
+                <a asp-action="Index" class="srmss-btn secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="srmss-card amber">
+        <h3 class="card-title">Impact Preview</h3>
+        <p class="card-subtitle">
+            Removing this stop may affect the visible route flow.
+        </p>
+
+        <div class="detailed-stop-flow">
+            <div class="detailed-stop-item active">
+                <div class="detailed-stop-dot">@Model.StopOrder</div>
+                <div class="detailed-stop-content">
+                    <strong>@Model.StopName</strong>
+                    <small>This stop will be removed</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty-stop-panel mt-4">
+            <div class="empty-stop-icon">!</div>
+            <h4>Before Deleting</h4>
+            <p>
+                Check if this stop is still needed for route planning or schedule explanation.
+            </p>
+        </div>
+    </div>
+</div>
+
+

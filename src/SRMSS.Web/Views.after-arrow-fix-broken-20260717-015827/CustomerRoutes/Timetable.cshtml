@@ -1,0 +1,165 @@
+﻿@model IEnumerable<SRMSS.Web.Models.Schedule>
+
+@{
+    ViewData["Title"] = "Timetable";
+    ViewData["PageTitle"] = "Travel Timetable";
+    ViewData["PageSubtitle"] = "View upcoming public transport schedules.";
+}
+
+<section class="customer-page-shell">
+
+    <div class="customer-hero compact">
+        <div>
+            <span class="hero-kicker">
+                CUSTOMER TIMETABLE
+            </span>
+
+            <h1>
+                Upcoming Schedules
+            </h1>
+
+            <p>
+                Search and view available route schedules before planning your journey.
+            </p>
+        </div>
+
+        <a href="/CustomerRoutes/Index"
+           class="hero-action-btn">
+            Search Routes
+        </a>
+    </div>
+
+
+    <div class="srmss-card customer-filter-card">
+
+        <form method="get"
+              asp-action="Timetable"
+              class="customer-filter-grid">
+
+            <div>
+                <label class="form-label">
+                    Search route
+                </label>
+
+                <input type="text"
+                       name="search"
+                       value="@ViewBag.Search"
+                       class="form-control"
+                       placeholder="Colombo, Kandy, Matara..." />
+            </div>
+
+            <div>
+                <label class="form-label">
+                    From date
+                </label>
+
+                <input type="date"
+                       name="date"
+                       value="@ViewBag.SelectedDate"
+                       class="form-control" />
+            </div>
+
+            <div class="filter-button-area">
+                <button type="submit"
+                        class="srmss-btn primary w-100">
+                    Search Timetable
+                </button>
+            </div>
+
+            <div class="filter-button-area">
+                <a href="/CustomerRoutes/Timetable"
+                   class="srmss-btn secondary w-100">
+                    Clear
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <div class="customer-schedule-grid">
+
+        @if (Model.Any())
+        {
+            foreach (var schedule in Model)
+            {
+                string statusClass =
+                    schedule.Status == "Completed"
+                        ? "green"
+                        : schedule.Status == "Delayed"
+                            ? "amber"
+                            : schedule.Status == "Cancelled"
+                                ? "red"
+                                : "blue";
+
+                <div class="customer-schedule-card">
+
+                    <div class="schedule-card-top">
+                        <span class="status-pill @statusClass">
+                            @schedule.Status
+                        </span>
+
+                        <strong>
+                            @schedule.ScheduleDate.ToString("dd MMM yyyy")
+                        </strong>
+                    </div>
+
+                    <h3>
+                        @(schedule.TransportRoute?.RouteName ?? "Route")
+                    </h3>
+
+                    <p>
+                        @(schedule.TransportRoute?.StartPoint ?? "Start")
+                        &#8594;
+                        @(schedule.TransportRoute?.EndPoint ?? "End")
+                    </p>
+
+                    <div class="schedule-time-row">
+                        <div>
+                            <span>
+                                Departure
+                            </span>
+
+                            <strong>
+                                @(schedule.DepartureTime.ToString(@"hh\:mm"))
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>
+                                Arrival
+                            </span>
+
+                            <strong>
+                                @(schedule.ArrivalTime.ToString(@"hh\:mm"))
+                            </strong>
+                        </div>
+                    </div>
+
+                    <a href="/CustomerRoutes/Details/@schedule.TransportRouteId"
+                       class="schedule-details-link">
+                        View Route Details
+                    </a>
+
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-customer-state">
+                <h3>
+                    No schedules found
+                </h3>
+
+                <p>
+                    Try another route name or date.
+                </p>
+            </div>
+        }
+
+    </div>
+
+</section>
+
+

@@ -1,0 +1,103 @@
+﻿@model SRMSS.Web.Models.RouteStop
+
+@{
+    ViewData["Title"] = "Add Route Stop";
+    ViewData["PageTitle"] = "Add Route Stop";
+    ViewData["PageSubtitle"] = "Add ordered stops for a route before scheduling trips.";
+}
+
+<div class="route-stop-create-grid">
+    <div class="srmss-card route-stop-form-card">
+        <h3 class="card-title">Stop Details</h3>
+        <p class="card-subtitle">
+            Enter route stop details before adding it to the route flow.
+        </p>
+
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="TransportRouteId" class="form-label">Route</label>
+                <select asp-for="TransportRouteId" class="form-select wire-input" asp-items="ViewBag.TransportRouteId">
+                    <option value="">-- Select Route --</option>
+                </select>
+                <span asp-validation-for="TransportRouteId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="StopName" class="form-label">Stop Name</label>
+                <input asp-for="StopName" class="form-control wire-input" placeholder="Example: Kalutara" />
+                <span asp-validation-for="StopName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="StopOrder" class="form-label">Stop Order</label>
+                <input asp-for="StopOrder" class="form-control wire-input" placeholder="Example: 1" />
+                <span asp-validation-for="StopOrder" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="EstimatedMinutesFromStart" class="form-label">
+                    Estimated Minutes From Start
+                </label>
+                <input asp-for="EstimatedMinutesFromStart" class="form-control wire-input" placeholder="Example: 45" />
+                <span asp-validation-for="EstimatedMinutesFromStart" class="text-danger"></span>
+            </div>
+
+            <div class="wire-btn-row">
+                <button type="submit" class="srmss-btn primary">
+                    Save Route Stop
+                </button>
+
+                <a asp-action="Index" class="srmss-btn secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="srmss-card amber route-stop-preview-card">
+        <h3 class="card-title">Route Stops</h3>
+        <p class="card-subtitle">
+            Ordered stops will appear in the route line preview.
+        </p>
+
+        <div class="wire-stop-preview">
+            <div class="wire-stop-item active">
+                <div class="wire-stop-dot"></div>
+                <div>
+                    <strong>1. Start Point</strong>
+                    <small>Route begins from selected route start</small>
+                </div>
+            </div>
+
+            <div class="wire-stop-item">
+                <div class="wire-stop-dot"></div>
+                <div>
+                    <strong>2. New Stop</strong>
+                    <small>Your stop will be inserted by stop order</small>
+                </div>
+            </div>
+
+            <div class="wire-stop-item">
+                <div class="wire-stop-dot"></div>
+                <div>
+                    <strong>3. End Point</strong>
+                    <small>Route finishes at selected route end</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="wire-example-box">
+            <h4>Example Flow</h4>
+            <p>Colombo â†’ Kalutara â†’ Hikkaduwa â†’ Galle</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+

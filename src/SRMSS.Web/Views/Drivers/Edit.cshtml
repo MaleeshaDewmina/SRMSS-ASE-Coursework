@@ -1,4 +1,4 @@
-@model SRMSS.Web.Models.Driver
+﻿@model SRMSS.Web.Models.Driver
 
 @{
     bool isEdit = Model.Id > 0;
@@ -120,4 +120,5 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
+
 
