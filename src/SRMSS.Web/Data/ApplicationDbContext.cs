@@ -20,6 +20,8 @@ namespace SRMSS.Web.Data
         public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<FavoriteRoute> FavoriteRoutes { get; set; }
+        public DbSet<CustomerFeedback> CustomerFeedbacks { get; set; }
+        public DbSet<Announcement> Announcements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +73,32 @@ namespace SRMSS.Web.Data
                 .WithMany(v => v.Schedules)
                 .HasForeignKey(s => s.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+
+            // Customer feedback relationship
+            modelBuilder.Entity<CustomerFeedback>()
+                .HasOne(f => f.AppUser)
+                .WithMany()
+                .HasForeignKey(f => f.AppUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CustomerFeedback>()
+                .HasOne(f => f.TransportRoute)
+                .WithMany()
+                .HasForeignKey(f => f.TransportRouteId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CustomerFeedback>()
+                .HasIndex(f => f.CustomerKey);
+
+            modelBuilder.Entity<CustomerFeedback>()
+                .HasIndex(f => f.Status);
+
+            modelBuilder.Entity<Announcement>()
+                .HasIndex(a => a.Audience);
+
+            modelBuilder.Entity<Announcement>()
+                .HasIndex(a => a.Status);
 
             // Decimal precision settings
             modelBuilder.Entity<TransportRoute>()

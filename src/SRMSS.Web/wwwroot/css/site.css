@@ -5998,3 +5998,557 @@ html[data-theme="dark"]
 .sidebar-collapsed .brand-mark.brand-mark-logo {
     flex-basis: 48px;
 }
+
+
+/* =========================
+   Enterprise Fleet, Reports and Communication Modules
+========================= */
+.module-hero {
+    border-radius: 28px;
+    padding: 30px;
+    margin-bottom: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.25), transparent 38%),
+        linear-gradient(135deg, #0f172a, #12356d 55%, #07111f);
+    color: #ffffff;
+    box-shadow: 0 22px 55px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
+    position: relative;
+}
+
+.module-hero::after {
+    content: "";
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    right: -50px;
+    bottom: -70px;
+    border-radius: 50%;
+    border: 28px solid rgba(255, 255, 255, 0.08);
+}
+
+.module-hero h2 {
+    margin: 8px 0 8px;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+}
+
+.module-hero p {
+    margin: 0;
+    max-width: 680px;
+    color: rgba(255, 255, 255, 0.76);
+    line-height: 1.65;
+}
+
+.module-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.13);
+    color: #dbeafe;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.vehicle-hero {
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 38%),
+        linear-gradient(135deg, #0f172a, #14532d 58%, #07111f);
+}
+
+.fuel-hero {
+    background:
+        radial-gradient(circle at top right, rgba(245, 158, 11, 0.24), transparent 38%),
+        linear-gradient(135deg, #0f172a, #7c2d12 58%, #07111f);
+}
+
+.maintenance-hero {
+    background:
+        radial-gradient(circle at top right, rgba(239, 68, 68, 0.2), transparent 38%),
+        linear-gradient(135deg, #0f172a, #581c87 58%, #07111f);
+}
+
+.feedback-hero {
+    background:
+        radial-gradient(circle at top right, rgba(20, 184, 166, 0.23), transparent 38%),
+        linear-gradient(135deg, #0f172a, #134e4a 58%, #07111f);
+}
+
+.announcement-hero {
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.24), transparent 38%),
+        linear-gradient(135deg, #0f172a, #1e3a8a 58%, #07111f);
+}
+
+.report-hero {
+    background:
+        radial-gradient(circle at top right, rgba(168, 85, 247, 0.23), transparent 38%),
+        linear-gradient(135deg, #0f172a, #312e81 58%, #07111f);
+}
+
+.enterprise-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 18px;
+    align-items: end;
+}
+
+.enterprise-form-card {
+    max-width: 1120px;
+}
+
+.enterprise-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.enterprise-form-wide {
+    grid-column: 1 / -1;
+}
+
+.enterprise-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+.enterprise-detail-grid,
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.detail-list {
+    display: grid;
+    gap: 14px;
+}
+
+.detail-list div {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.detail-list span {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.detail-list strong {
+    color: #0f172a;
+    text-align: right;
+}
+
+.table-muted {
+    opacity: 0.62;
+}
+
+.inline-action-form {
+    display: inline;
+}
+
+.button-link {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+.srmss-btn.danger {
+    background: #dc2626;
+    color: #fff;
+}
+
+.danger-panel {
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.danger-panel::before {
+    background: #ef4444;
+}
+
+.feedback-grid,
+.announcement-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.feedback-card-top,
+.announcement-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.feedback-card h3,
+.announcement-card h3 {
+    margin: 6px 0 10px;
+    font-size: 21px;
+    font-weight: 850;
+}
+
+.feedback-card p,
+.announcement-card p,
+.announcement-detail-card p {
+    color: #475569;
+    line-height: 1.7;
+}
+
+.feedback-meta,
+.announcement-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.feedback-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.feedback-message-box {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    line-height: 1.7;
+}
+
+.report-chart-card {
+    min-height: 360px;
+}
+
+.report-chart-card canvas {
+    width: 100% !important;
+    height: 280px !important;
+}
+
+.report-chart-card.wide canvas {
+    height: 320px !important;
+}
+
+body.srmss-dark .detail-list strong,
+body.dark-mode .detail-list strong {
+    color: #e5e7eb;
+}
+
+body.srmss-dark .feedback-message-box,
+body.dark-mode .feedback-message-box {
+    background: rgba(15, 23, 42, 0.65);
+    border-color: rgba(148, 163, 184, 0.22);
+    color: #cbd5e1;
+}
+
+@media (max-width: 1100px) {
+    .enterprise-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .enterprise-detail-grid,
+    .analytics-grid,
+    .feedback-grid,
+    .announcement-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 680px) {
+    .module-hero {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 24px;
+    }
+
+    .module-hero h2 {
+        font-size: 26px;
+    }
+
+    .enterprise-filter-grid,
+    .enterprise-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .enterprise-form-actions {
+        justify-content: stretch;
+    }
+
+    .enterprise-form-actions .srmss-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* =========================================================
+   SRMSS TOPBAR NOTIFICATION DROPDOWN - FINAL FIX
+   Checkbox based. No Bootstrap dropdown JS and no custom JS needed.
+   ========================================================= */
+
+.srmss-native-notification {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    isolation: isolate;
+}
+
+.srmss-notification-switch {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.srmss-notification-toggle {
+    margin: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.srmss-notification-panel {
+    position: fixed;
+    top: 82px;
+    right: 28px;
+    width: 370px;
+    max-width: calc(100vw - 32px);
+    padding: 14px;
+    background: var(--surface, #ffffff);
+    border: 1px solid rgba(148, 163, 184, 0.30);
+    border-radius: 22px;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24);
+    z-index: 999999;
+    display: none;
+}
+
+.srmss-notification-switch:checked ~ .srmss-notification-panel {
+    display: block;
+    animation: srmssNotificationDrop 0.18s ease both;
+}
+
+@keyframes srmssNotificationDrop {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.srmss-notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    text-decoration: none;
+    padding: 12px 10px;
+    border-radius: 16px;
+    transition: all 0.18s ease;
+}
+
+.srmss-notification-item:hover {
+    background: rgba(37, 99, 235, 0.08);
+    transform: translateX(2px);
+}
+
+.srmss-notification-item strong {
+    display: block;
+    color: var(--text-primary, #0f172a);
+    font-size: 0.86rem;
+    line-height: 1.25;
+}
+
+.srmss-notification-item small {
+    display: block;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.75rem;
+    margin-top: 3px;
+    line-height: 1.35;
+}
+
+.notification-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 10px 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    margin-bottom: 8px;
+}
+
+.notification-panel-header strong {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--text-primary, #0f172a);
+}
+
+.notification-panel-header small {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-secondary, #64748b);
+    margin-top: 2px;
+}
+
+.notification-count {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+    font-weight: 800;
+    font-size: 0.8rem;
+}
+
+.notification-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex: 0 0 auto;
+}
+
+.notification-dot.info {
+    background: #2563eb;
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.12);
+}
+
+.notification-dot.warning {
+    background: #f59e0b;
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.14);
+}
+
+.notification-dot.success {
+    background: #10b981;
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.14);
+}
+
+.notification-panel-footer {
+    padding: 10px 10px 4px;
+    border-top: 1px solid rgba(148, 163, 184, 0.22);
+    margin-top: 8px;
+    text-align: center;
+}
+
+.notification-panel-footer a {
+    color: #2563eb;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.notification-panel-footer a:hover {
+    text-decoration: underline;
+}
+
+[data-theme="dark"] .srmss-notification-panel {
+    background: #111827;
+    border-color: rgba(148, 163, 184, 0.22);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+}
+
+[data-theme="dark"] .notification-panel-header strong,
+[data-theme="dark"] .srmss-notification-item strong {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .notification-panel-header small,
+[data-theme="dark"] .srmss-notification-item small {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .srmss-notification-item:hover {
+    background: rgba(59, 130, 246, 0.14);
+}
+
+@media (max-width: 576px) {
+    .srmss-notification-panel {
+        top: 72px;
+        right: 14px;
+        width: 320px;
+    }
+}
+
+
+/* =========================
+   FINAL TOPBAR SINGLE NOTIFICATION FIX
+   Keeps only #topbarNotificationButton visible in the topbar.
+========================= */
+
+.modern-topbar {
+    position: relative !important;
+    z-index: 1000 !important;
+    overflow: visible !important;
+}
+
+.topbar-right {
+    position: relative !important;
+    z-index: 1001 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+}
+
+.topbar-right .topbar-notification-form {
+    display: none !important;
+}
+
+.topbar-right .notification-btn:not(#topbarNotificationButton) {
+    display: none !important;
+}
+
+#topbarNotificationButton {
+    display: grid !important;
+    place-items: center !important;
+    position: relative !important;
+    z-index: 1002 !important;
+    width: 42px !important;
+    height: 42px !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+#topbarNotificationButton span,
+#topbarNotificationButton svg,
+#topbarNotificationButton .notification-pulse {
+    pointer-events: none !important;
+}
+
+#topbarNotificationButton:hover {
+    color: var(--text-primary) !important;
+}

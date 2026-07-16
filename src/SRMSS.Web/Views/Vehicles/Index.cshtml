@@ -1,0 +1,127 @@
+@model IEnumerable<SRMSS.Web.Models.Vehicle>
+
+@{
+    ViewData["Title"] = "Vehicle Management";
+    ViewData["PageTitle"] = "Vehicle Management";
+    ViewData["PageSubtitle"] = "Enterprise vehicle registry, availability, compliance and maintenance readiness.";
+
+    string currentRole = Context.Session.GetString(SessionKeys.Role) ?? string.Empty;
+    bool canManage = currentRole == "SuperAdmin" || currentRole == "Admin";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success srmss-alert">@TempData["SuccessMessage"]</div>
+}
+
+<div class="module-hero vehicle-hero">
+    <div>
+        <span class="module-kicker">Fleet Assets</span>
+        <h2>Vehicle Operations Center</h2>
+        <p>Manage registration, readiness, maintenance status and operating mileage of the depot fleet.</p>
+    </div>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="srmss-btn primary">+ Add Vehicle</a>
+    }
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><div class="metric-icon">V</div><div><p>Total Vehicles</p><h3>@ViewBag.TotalVehicles</h3></div></div>
+    <div class="metric-card"><div class="metric-icon green">A</div><div><p>Available</p><h3>@ViewBag.AvailableVehicles</h3></div></div>
+    <div class="metric-card"><div class="metric-icon blue">R</div><div><p>In Service</p><h3>@ViewBag.InServiceVehicles</h3></div></div>
+    <div class="metric-card"><div class="metric-icon amber">M</div><div><p>Maintenance Due</p><h3>@ViewBag.MaintenanceDue</h3></div></div>
+</div>
+
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Search and Filter Vehicles</h3>
+    <p class="card-subtitle">Search by registration, model, manufacturer, chassis number or depot.</p>
+    <form method="get" class="enterprise-filter-grid">
+        <div>
+            <label class="form-label">Search</label>
+            <input name="search" value="@ViewBag.Search" class="form-control" placeholder="Example: NB-4521, Leyland, Diesel..." />
+        </div>
+        <div>
+            <label class="form-label">Vehicle Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="Available" selected="@(ViewBag.Status == "Available")">Available</option>
+                <option value="In Service" selected="@(ViewBag.Status == "In Service")">In Service</option>
+                <option value="Maintenance" selected="@(ViewBag.Status == "Maintenance")">Maintenance</option>
+                <option value="Inactive" selected="@(ViewBag.Status == "Inactive")">Inactive</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label">Maintenance</label>
+            <select name="maintenanceStatus" class="form-select">
+                <option value="">All</option>
+                <option value="Good" selected="@(ViewBag.MaintenanceStatus == "Good")">Good</option>
+                <option value="Due" selected="@(ViewBag.MaintenanceStatus == "Due")">Due</option>
+                <option value="Critical" selected="@(ViewBag.MaintenanceStatus == "Critical")">Critical</option>
+                <option value="In Maintenance" selected="@(ViewBag.MaintenanceStatus == "In Maintenance")">In Maintenance</option>
+            </select>
+        </div>
+        <div class="filter-button-area"><button type="submit" class="srmss-btn primary w-100">Apply</button></div>
+        <div class="filter-button-area"><a asp-action="Index" class="srmss-btn secondary w-100">Clear</a></div>
+    </form>
+</div>
+
+<div class="srmss-card">
+    <h3 class="card-title">Vehicle List</h3>
+    <p class="card-subtitle">Monitor operational readiness, upcoming service needs and vehicle activity.</p>
+
+    <div class="table-responsive">
+        <table class="srmss-table enterprise-table">
+            <thead>
+                <tr><th>Vehicle</th><th>Type</th><th>Capacity</th><th>Mileage</th><th>Fuel</th><th>Status</th><th>Maintenance</th><th class="text-end">Actions</th></tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var vehicle in Model)
+                    {
+                        string statusClass = vehicle.Status == "Available" ? "green" : vehicle.Status == "In Service" ? "blue" : vehicle.Status == "Inactive" ? "red" : "amber";
+                        string maintenanceClass = vehicle.MaintenanceStatus == "Good" ? "green" : vehicle.MaintenanceStatus == "Critical" ? "red" : "amber";
+                        <tr class="@(vehicle.IsActive ? "" : "table-muted")">
+                            <td>
+                                <strong>@vehicle.RegistrationNumber</strong>
+                                <small class="d-block text-muted">@(vehicle.Manufacturer ?? "") @(vehicle.Model ?? "")</small>
+                            </td>
+                            <td>@vehicle.VehicleType</td>
+                            <td>@vehicle.SeatingCapacity seats</td>
+                            <td>@vehicle.Mileage.ToString("N0") km</td>
+                            <td>@vehicle.FuelType</td>
+                            <td><span class="status-pill @statusClass">@vehicle.Status</span></td>
+                            <td><span class="status-pill @maintenanceClass">@vehicle.MaintenanceStatus</span></td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@vehicle.Id" class="action-link">Details</a>
+                                <a asp-controller="FuelLogs" asp-action="Create" asp-route-vehicleId="@vehicle.Id" class="action-link">Fuel</a>
+                                <a asp-controller="MaintenanceLogs" asp-action="Create" asp-route-vehicleId="@vehicle.Id" class="action-link">Service</a>
+                                @if (canManage)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@vehicle.Id" class="action-link">Edit</a>
+                                    @if (vehicle.IsActive)
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@vehicle.Id" class="action-link danger">Deactivate</a>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Reactivate" asp-route-id="@vehicle.Id" method="post" class="inline-action-form">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="action-link button-link">Reactivate</button>
+                                        </form>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">No vehicles found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

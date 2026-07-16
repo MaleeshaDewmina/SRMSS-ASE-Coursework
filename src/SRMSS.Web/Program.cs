@@ -338,6 +338,148 @@ using (var scope = app.Services.CreateScope())
     }
 
 
+    if (!context.Drivers.Any())
+    {
+        context.Drivers.AddRange(
+            new Driver
+            {
+                FullName = "Kamal Perera",
+                NIC = "821234567V",
+                LicenseNumber = "B1234567",
+                LicenseExpiryDate = DateTime.Today.AddYears(2),
+                Phone = "0771234567",
+                Email = "kamal.driver@srmss.local",
+                EmployeeNumber = "DRV-001",
+                AssignedDepot = "Colombo Depot",
+                ShiftType = "Day",
+                Status = "Available",
+                IsActive = true,
+                HireDate = DateTime.Today.AddYears(-5),
+                CreatedAt = DateTime.Now
+            },
+            new Driver
+            {
+                FullName = "Nimal Fernando",
+                NIC = "790987654V",
+                LicenseNumber = "B7654321",
+                LicenseExpiryDate = DateTime.Today.AddMonths(8),
+                Phone = "0777654321",
+                Email = "nimal.driver@srmss.local",
+                EmployeeNumber = "DRV-002",
+                AssignedDepot = "Kalutara Depot",
+                ShiftType = "Rotational",
+                Status = "Available",
+                IsActive = true,
+                HireDate = DateTime.Today.AddYears(-7),
+                CreatedAt = DateTime.Now
+            },
+            new Driver
+            {
+                FullName = "Saman Jayasinghe",
+                NIC = "880112233V",
+                LicenseNumber = "B9988776",
+                LicenseExpiryDate = DateTime.Today.AddDays(25),
+                Phone = "0719988776",
+                Email = "saman.driver@srmss.local",
+                EmployeeNumber = "DRV-003",
+                AssignedDepot = "Galle Depot",
+                ShiftType = "Night",
+                Status = "Available",
+                IsActive = true,
+                HireDate = DateTime.Today.AddYears(-3),
+                CreatedAt = DateTime.Now
+            }
+        );
+    }
+
+
+    if (!context.Vehicles.Any())
+    {
+        context.Vehicles.AddRange(
+            new Vehicle
+            {
+                RegistrationNumber = "NB-4521",
+                VehicleType = "Luxury Bus",
+                Manufacturer = "Ashok Leyland",
+                Model = "Viking",
+                SeatingCapacity = 54,
+                Mileage = 185000,
+                FuelType = "Diesel",
+                AssignedDepot = "Colombo Depot",
+                MaintenanceStatus = "Good",
+                Status = "Available",
+                IsActive = true,
+                InsuranceExpiryDate = DateTime.Today.AddMonths(10),
+                RevenueLicenseExpiryDate = DateTime.Today.AddMonths(9),
+                CreatedAt = DateTime.Now
+            },
+            new Vehicle
+            {
+                RegistrationNumber = "ND-7788",
+                VehicleType = "Bus",
+                Manufacturer = "Tata",
+                Model = "LP 1512",
+                SeatingCapacity = 48,
+                Mileage = 220000,
+                FuelType = "Diesel",
+                AssignedDepot = "Kalutara Depot",
+                MaintenanceStatus = "Due",
+                Status = "Available",
+                IsActive = true,
+                InsuranceExpiryDate = DateTime.Today.AddMonths(6),
+                RevenueLicenseExpiryDate = DateTime.Today.AddMonths(6),
+                CreatedAt = DateTime.Now
+            },
+            new Vehicle
+            {
+                RegistrationNumber = "NC-9911",
+                VehicleType = "Mini Bus",
+                Manufacturer = "Mitsubishi",
+                Model = "Rosa",
+                SeatingCapacity = 30,
+                Mileage = 96000,
+                FuelType = "Diesel",
+                AssignedDepot = "Galle Depot",
+                MaintenanceStatus = "Good",
+                Status = "Available",
+                IsActive = true,
+                InsuranceExpiryDate = DateTime.Today.AddMonths(11),
+                RevenueLicenseExpiryDate = DateTime.Today.AddMonths(11),
+                CreatedAt = DateTime.Now
+            }
+        );
+    }
+
+
+    if (!context.Announcements.Any())
+    {
+        context.Announcements.AddRange(
+            new Announcement
+            {
+                Title = "Welcome to SRMSS Enterprise Operations",
+                Message = "Depot staff can now manage routes, schedules, fleet assets, fuel usage, maintenance records, reports and service communications from one integrated platform.",
+                Audience = "All",
+                Priority = "Normal",
+                Status = "Published",
+                PublishDate = DateTime.Today,
+                CreatedBy = "System",
+                CreatedAt = DateTime.Now
+            },
+            new Announcement
+            {
+                Title = "Customer Route Search Available",
+                Message = "Customers can search active routes, view journey details, open map previews and save favourite routes from the customer portal.",
+                Audience = "Customer",
+                Priority = "High",
+                Status = "Published",
+                PublishDate = DateTime.Today,
+                CreatedBy = "System",
+                CreatedAt = DateTime.Now
+            }
+        );
+    }
+
+
     await context.SaveChangesAsync();
 }
 

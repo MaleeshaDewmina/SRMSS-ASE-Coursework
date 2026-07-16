@@ -1,0 +1,123 @@
+@model SRMSS.Web.Models.Driver
+
+@{
+    bool isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Edit Driver" : "Add Driver";
+    ViewData["PageTitle"] = isEdit ? "Edit Driver" : "Add Driver";
+    ViewData["PageSubtitle"] = "Maintain complete driver profile, compliance and availability information.";
+}
+
+<div class="srmss-card enterprise-form-card">
+    <h3 class="card-title">Driver Profile</h3>
+    <p class="card-subtitle">Complete all required driver identity, license and operational allocation details.</p>
+
+    <form asp-action="@(isEdit ? "Edit" : "Create")" method="post">
+        @Html.AntiForgeryToken()
+        @if (isEdit)
+        {
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreatedAt" />
+        }
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="enterprise-form-grid">
+            <div>
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="NIC" class="form-label"></label>
+                <input asp-for="NIC" class="form-control" />
+                <span asp-validation-for="NIC" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="LicenseNumber" class="form-label"></label>
+                <input asp-for="LicenseNumber" class="form-control" />
+                <span asp-validation-for="LicenseNumber" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="LicenseExpiryDate" class="form-label"></label>
+                <input asp-for="LicenseExpiryDate" type="date" class="form-control" />
+                <span asp-validation-for="LicenseExpiryDate" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="Phone" class="form-label"></label>
+                <input asp-for="Phone" class="form-control" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="EmployeeNumber" class="form-label"></label>
+                <input asp-for="EmployeeNumber" class="form-control" />
+                <span asp-validation-for="EmployeeNumber" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="AssignedDepot" class="form-label"></label>
+                <input asp-for="AssignedDepot" class="form-control" />
+                <span asp-validation-for="AssignedDepot" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="ShiftType" class="form-label"></label>
+                <select asp-for="ShiftType" class="form-select">
+                    <option>Day</option>
+                    <option>Night</option>
+                    <option>Rotational</option>
+                    <option>Standby</option>
+                </select>
+                <span asp-validation-for="ShiftType" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" class="form-select">
+                    <option>Available</option>
+                    <option>Assigned</option>
+                    <option>On Leave</option>
+                    <option>Inactive</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="HireDate" class="form-label"></label>
+                <input asp-for="HireDate" type="date" class="form-control" />
+                <span asp-validation-for="HireDate" class="text-danger"></span>
+            </div>
+            <div>
+                <label class="form-label">Active Account</label>
+                <select asp-for="IsActive" class="form-select">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <div>
+                <label asp-for="EmergencyContactName" class="form-label"></label>
+                <input asp-for="EmergencyContactName" class="form-control" />
+                <span asp-validation-for="EmergencyContactName" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="EmergencyContactPhone" class="form-label"></label>
+                <input asp-for="EmergencyContactPhone" class="form-control" />
+                <span asp-validation-for="EmergencyContactPhone" class="text-danger"></span>
+            </div>
+            <div class="enterprise-form-wide">
+                <label asp-for="Address" class="form-label"></label>
+                <textarea asp-for="Address" rows="3" class="form-control"></textarea>
+                <span asp-validation-for="Address" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="enterprise-form-actions">
+            <a asp-action="Index" class="srmss-btn secondary">Back</a>
+            <button type="submit" class="srmss-btn primary">@(isEdit ? "Update Driver" : "Create Driver")</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
