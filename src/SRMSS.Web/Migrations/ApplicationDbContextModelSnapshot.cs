@@ -151,6 +151,32 @@ namespace SRMSS.Web.Migrations
                     b.ToTable("Drivers");
                 });
 
+            modelBuilder.Entity("SRMSS.Web.Models.FavoriteRoute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CustomerKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("SavedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TransportRouteId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransportRouteId");
+
+                    b.ToTable("FavoriteRoutes");
+                });
+
             modelBuilder.Entity("SRMSS.Web.Models.FuelLog", b =>
                 {
                     b.Property<int>("Id")
@@ -232,6 +258,9 @@ namespace SRMSS.Web.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("EstimatedMinutesFromStart")
+                        .HasColumnType("int");
+
                     b.Property<string>("StopName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -266,6 +295,10 @@ namespace SRMSS.Web.Migrations
 
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
                     b.Property<DateTime>("ScheduleDate")
                         .HasColumnType("datetime2");
@@ -307,6 +340,9 @@ namespace SRMSS.Web.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("EstimatedDurationMinutes")
+                        .HasColumnType("int");
 
                     b.Property<string>("RouteName")
                         .IsRequired()
@@ -377,6 +413,17 @@ namespace SRMSS.Web.Migrations
                         .HasForeignKey("AppUserId");
 
                     b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("SRMSS.Web.Models.FavoriteRoute", b =>
+                {
+                    b.HasOne("SRMSS.Web.Models.TransportRoute", "TransportRoute")
+                        .WithMany()
+                        .HasForeignKey("TransportRouteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TransportRoute");
                 });
 
             modelBuilder.Entity("SRMSS.Web.Models.FuelLog", b =>

@@ -1,0 +1,71 @@
+﻿@model SRMSS.Web.Models.CustomerFeedback
+
+@{
+    ViewData["Title"] = "Submit Feedback";
+    ViewData["PageTitle"] = "Submit Feedback";
+    ViewData["PageSubtitle"] = "Share your experience about routes, drivers, vehicles or service delays.";
+}
+
+<div class="srmss-card enterprise-form-card">
+    <h3 class="card-title">Submit Customer Feedback</h3>
+    <p class="card-subtitle">Your feedback helps the depot improve public transport operations.</p>
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="enterprise-form-grid">
+            <div>
+                <label asp-for="TransportRouteId" class="form-label">Related Route</label>
+                <select asp-for="TransportRouteId" asp-items="ViewBag.TransportRouteId" class="form-select">
+                    <option value="">General feedback</option>
+                </select>
+                <span asp-validation-for="TransportRouteId" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="Category" class="form-label"></label>
+                <select asp-for="Category" class="form-select">
+                    <option>General</option>
+                    <option>Delay</option>
+                    <option>Vehicle</option>
+                    <option>Driver</option>
+                    <option>Safety</option>
+                    <option>Route</option>
+                </select>
+                <span asp-validation-for="Category" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="Rating" class="form-label"></label>
+                <select asp-for="Rating" class="form-select">
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Average</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Critical</option>
+                </select>
+                <span asp-validation-for="Rating" class="text-danger"></span>
+            </div>
+            <div class="enterprise-form-wide">
+                <label asp-for="Subject" class="form-label"></label>
+                <input asp-for="Subject" class="form-control" placeholder="Short title for your feedback" />
+                <span asp-validation-for="Subject" class="text-danger"></span>
+            </div>
+            <div class="enterprise-form-wide">
+                <label asp-for="Message" class="form-label"></label>
+                <textarea asp-for="Message" rows="6" class="form-control" placeholder="Explain what happened and where it happened..."></textarea>
+                <span asp-validation-for="Message" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="enterprise-form-actions">
+            <a asp-action="Index" class="srmss-btn secondary">Back</a>
+            <button type="submit" class="srmss-btn primary">Submit Feedback</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+

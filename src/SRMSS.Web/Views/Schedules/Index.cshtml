@@ -1,0 +1,535 @@
+﻿@using System.Text.Json
+@model IEnumerable<SRMSS.Web.Models.Schedule>
+
+@{
+    ViewData["Title"] = "Schedule Management";
+    ViewData["PageTitle"] = "Schedule Management";
+
+    string currentRole = Context.Session.GetString("Role") ?? string.Empty;
+
+    bool canManageEmergencyAdjustments =
+        currentRole == "SuperAdmin" ||
+        currentRole == "Admin";
+
+    bool canDeleteSchedules =
+        currentRole == "SuperAdmin" ||
+        currentRole == "Admin";
+
+    ViewData["PageSubtitle"] = currentRole == "User"
+        ? "Create schedules, update trip status and manage daily transport operations."
+        : "Manage route schedules, trip status, driver allocation and vehicle allocation.";
+
+    var totalSchedules = Model.Count();
+    var scheduledTrips = Model.Count(s => s.Status == "Scheduled");
+    var delayedTrips = Model.Count(s => s.Status == "Delayed");
+    var completedTrips = Model.Count(s => s.Status == "Completed");
+
+    var scheduleData = Model
+        .Select(s => new
+        {
+            scheduleId = s.Id,
+            routeName = s.TransportRoute != null ? s.TransportRoute.RouteName : "Unknown Route",
+            driverName = s.Driver != null ? s.Driver.FullName : "Unknown Driver",
+            vehicleName = s.Vehicle != null ? s.Vehicle.RegistrationNumber : "Unknown Vehicle",
+            scheduleDate = s.ScheduleDate.ToString("yyyy-MM-dd"),
+            displayDate = s.ScheduleDate.ToString("dd MMM yyyy"),
+            departureTime = s.DepartureTime.ToString(@"hh\:mm"),
+            arrivalTime = s.ArrivalTime.ToString(@"hh\:mm"),
+            status = s.Status,
+            notes = string.IsNullOrWhiteSpace(s.Notes) ? "No notes" : s.Notes
+        })
+        .ToList();
+
+    var scheduleDataJson = JsonSerializer.Serialize(
+        scheduleData,
+        new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }
+    );
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success srmss-alert">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger srmss-alert">@TempData["ErrorMessage"]</div>
+}
+
+<form id="globalAntiForgeryForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="d-flex justify-content-end mb-4">
+    <a asp-action="Create" class="srmss-btn primary">
+        + Create Schedule
+    </a>
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card">
+        <div class="metric-icon">S</div>
+        <div>
+            <p>Total Schedules</p>
+            <h3>@totalSchedules</h3>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon blue">T</div>
+        <div>
+            <p>Scheduled Trips</p>
+            <h3>@scheduledTrips</h3>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon amber">D</div>
+        <div>
+            <p>Delayed Trips</p>
+            <h3>@delayedTrips</h3>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon green">C</div>
+        <div>
+            <p>Completed Trips</p>
+            <h3>@completedTrips</h3>
+        </div>
+    </div>
+</div>
+
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Search and Filter Schedules</h3>
+    <p class="card-subtitle">
+        Find schedules by route, driver, vehicle, date or trip status.
+    </p>
+
+    <div class="schedule-filter-grid">
+        <div>
+            <label class="form-label">Search</label>
+            <input id="scheduleSearchInput"
+                   class="form-control"
+                   placeholder="Example: Colombo, NB-4521, Kamal..." />
+        </div>
+
+        <div>
+            <label class="form-label">Date</label>
+            <input id="scheduleDateFilter" type="date" class="form-control" />
+        </div>
+
+        <div>
+            <label class="form-label">Status</label>
+            <select id="scheduleStatusFilter" class="form-select">
+                <option value="">All Status</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="on time">On Time</option>
+                <option value="departed">Departed</option>
+                <option value="delayed">Delayed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+
+        <div class="filter-button-area">
+            <button type="button" id="clearScheduleFilterBtn" class="srmss-btn secondary w-100">
+                Clear Filter
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="schedule-management-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Schedule List</h3>
+        <p class="card-subtitle">
+            Update trip status or open schedule records for more details.
+        </p>
+
+        <div class="table-responsive">
+            <table class="srmss-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Route</th>
+                        <th>Vehicle</th>
+                        <th>Driver</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Update</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var schedule in Model)
+                        {
+                            var routeName = schedule.TransportRoute != null ? schedule.TransportRoute.RouteName : "Unknown Route";
+                            var driverName = schedule.Driver != null ? schedule.Driver.FullName : "Unknown Driver";
+                            var vehicleName = schedule.Vehicle != null ? schedule.Vehicle.RegistrationNumber : "Unknown Vehicle";
+
+                            var searchText = $"{routeName} {driverName} {vehicleName} {schedule.Status} {schedule.ScheduleDate:yyyy-MM-dd}".ToLower();
+
+                            <tr class="schedule-row"
+                                data-schedule-id="@schedule.Id"
+                                data-search="@searchText"
+                                data-date="@schedule.ScheduleDate.ToString("yyyy-MM-dd")"
+                                data-status="@schedule.Status.ToLower()">
+                                <td>@schedule.ScheduleDate.ToString("dd MMM yyyy")</td>
+                                <td class="fw-bold">@routeName</td>
+                                <td>@vehicleName</td>
+                                <td>@driverName</td>
+                                <td>
+                                    @schedule.DepartureTime.ToString(@"hh\:mm")
+                                    -
+                                    @schedule.ArrivalTime.ToString(@"hh\:mm")
+                                </td>
+                                <td>
+                                    @if (schedule.Status == "Scheduled")
+                                    {
+                                        <span class="status-pill blue">Scheduled</span>
+                                    }
+                                    else if (schedule.Status == "On Time")
+                                    {
+                                        <span class="status-pill green">On Time</span>
+                                    }
+                                    else if (schedule.Status == "Departed")
+                                    {
+                                        <span class="status-pill purple">Departed</span>
+                                    }
+                                    else if (schedule.Status == "Delayed")
+                                    {
+                                        <span class="status-pill amber">Delayed</span>
+                                    }
+                                    else if (schedule.Status == "Completed")
+                                    {
+                                        <span class="status-pill green">Completed</span>
+                                    }
+                                    else if (schedule.Status == "Cancelled")
+                                    {
+                                        <span class="status-pill red">Cancelled</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill blue">@schedule.Status</span>
+                                    }
+                                </td>
+                                <td>
+                                    <form asp-action="UpdateStatus" method="post" class="status-update-form">
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden" name="id" value="@schedule.Id" />
+
+                                        <select name="status" class="form-select form-select-sm">
+                                            <option value="Scheduled" selected="@(schedule.Status == "Scheduled")">Scheduled</option>
+                                            <option value="On Time" selected="@(schedule.Status == "On Time")">On Time</option>
+                                            <option value="Departed" selected="@(schedule.Status == "Departed")">Departed</option>
+                                            <option value="Delayed" selected="@(schedule.Status == "Delayed")">Delayed</option>
+                                            <option value="Completed" selected="@(schedule.Status == "Completed")">Completed</option>
+                                            <option value="Cancelled" selected="@(schedule.Status == "Cancelled")">Cancelled</option>
+                                        </select>
+
+                                        <button type="submit" class="mini-save-btn">
+                                            Save
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <button type="button"
+                                            class="view-schedule-btn"
+                                            data-schedule-id="@schedule.Id">
+                                        Preview
+                                    </button>
+
+                                    <a asp-action="Details" asp-route-id="@schedule.Id" class="action-link">Details</a>
+                                    <a asp-action="Edit" asp-route-id="@schedule.Id" class="action-link">Edit</a>
+
+                                    @if (canDeleteSchedules)
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@schedule.Id" class="action-link danger">Delete</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                No schedules have been created yet.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div id="noScheduleResults" class="no-stop-results d-none">
+            No matching schedules found.
+        </div>
+    </div>
+
+    <div class="srmss-card amber" id="schedulePreviewPanel">
+        <h3 class="card-title">Timetable Preview</h3>
+        <p class="card-subtitle" id="schedulePreviewSubtitle">
+            Select a schedule to view trip details.
+        </p>
+
+        <div id="schedulePreviewArea">
+            <div class="empty-stop-panel">
+                <div class="empty-stop-icon">i</div>
+                <h4>No schedule selected</h4>
+                <p>Click Preview from the schedule list to view trip details.</p>
+            </div>
+        </div>
+
+        @if (canManageEmergencyAdjustments)
+        {
+            <div class="smart-note mt-4">
+                <h4>Emergency Adjustment Support</h4>
+                <p>
+                    Administrators can update status and record reasons for delays, maintenance, cancellations or emergency changes.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="smart-note mt-4">
+                <h4>Operations Schedule Access</h4>
+                <p>
+                    You can create schedules, edit timetable information and update trip status as part of daily depot operations.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const schedules = @Html.Raw(scheduleDataJson);
+            const canManageEmergencyAdjustments = @canManageEmergencyAdjustments.ToString().ToLowerInvariant();
+
+            const tokenInput = document.querySelector("#globalAntiForgeryForm input[name='__RequestVerificationToken']");
+            const antiForgeryToken = tokenInput ? tokenInput.value : "";
+
+            const searchInput = document.getElementById("scheduleSearchInput");
+            const dateFilter = document.getElementById("scheduleDateFilter");
+            const statusFilter = document.getElementById("scheduleStatusFilter");
+            const clearBtn = document.getElementById("clearScheduleFilterBtn");
+            const rows = document.querySelectorAll(".schedule-row");
+            const noScheduleResults = document.getElementById("noScheduleResults");
+
+            const schedulePreviewSubtitle = document.getElementById("schedulePreviewSubtitle");
+            const schedulePreviewArea = document.getElementById("schedulePreviewArea");
+            const schedulePreviewPanel = document.getElementById("schedulePreviewPanel");
+
+            function escapeHtml(value) {
+                if (value === null || value === undefined) {
+                    return "";
+                }
+
+                return String(value)
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll('"', "&quot;")
+                    .replaceAll("'", "&#039;");
+            }
+
+            function buildStatusOptions(selectedStatus) {
+                const statuses = ["Scheduled", "On Time", "Departed", "Delayed", "Completed", "Cancelled"];
+
+                return statuses.map(function (status) {
+                    const selected = status === selectedStatus ? "selected" : "";
+                    return `<option value="${status}" ${selected}>${status}</option>`;
+                }).join("");
+            }
+
+            function filterSchedules() {
+                const searchValue = searchInput.value.toLowerCase().trim();
+                const selectedDate = dateFilter.value;
+                const selectedStatus = statusFilter.value;
+
+                let visibleCount = 0;
+
+                rows.forEach(function (row) {
+                    const rowSearch = row.getAttribute("data-search");
+                    const rowDate = row.getAttribute("data-date");
+                    const rowStatus = row.getAttribute("data-status");
+
+                    const matchesSearch = rowSearch.includes(searchValue);
+                    const matchesDate = selectedDate === "" || rowDate === selectedDate;
+                    const matchesStatus = selectedStatus === "" || rowStatus === selectedStatus;
+
+                    if (matchesSearch && matchesDate && matchesStatus) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                if (visibleCount === 0 && rows.length > 0) {
+                    noScheduleResults.classList.remove("d-none");
+                } else {
+                    noScheduleResults.classList.add("d-none");
+                }
+            }
+
+            function showSchedulePreview(scheduleId, shouldScroll) {
+                const schedule = schedules.find(s => s.scheduleId === scheduleId);
+
+                if (!schedule) {
+                    schedulePreviewSubtitle.textContent = "Schedule details not found.";
+                    schedulePreviewArea.innerHTML = `
+                        <div class="empty-stop-panel">
+                            <div class="empty-stop-icon">!</div>
+                            <h4>No details found</h4>
+                            <p>This schedule could not be loaded.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                schedulePreviewSubtitle.textContent =
+                    `${schedule.routeName} | ${schedule.displayDate}`;
+
+                let statusClass = "blue";
+
+                if (schedule.status === "On Time" || schedule.status === "Completed") {
+                    statusClass = "green";
+                } else if (schedule.status === "Departed") {
+                    statusClass = "purple";
+                } else if (schedule.status === "Delayed") {
+                    statusClass = "amber";
+                } else if (schedule.status === "Cancelled") {
+                    statusClass = "red";
+                }
+
+                let emergencyAdjustmentHtml = "";
+
+                if (canManageEmergencyAdjustments) {
+                    emergencyAdjustmentHtml = `
+                        <form action="/Schedules/UpdateEmergencyAdjustment"
+                              method="post"
+                              class="emergency-adjustment-form">
+                            <input type="hidden" name="__RequestVerificationToken" value="${antiForgeryToken}" />
+                            <input type="hidden" name="id" value="${schedule.scheduleId}" />
+
+                            <h4>Emergency Adjustment</h4>
+                            <p>Use this for delays, cancellations, maintenance issues or unexpected route changes.</p>
+
+                            <div class="mb-3">
+                                <label class="form-label">New Status</label>
+                                <select name="status" class="form-select">
+                                    ${buildStatusOptions(schedule.status)}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Adjustment Reason</label>
+                                <textarea name="adjustmentNote"
+                                          class="form-control"
+                                          rows="3"
+                                          placeholder="Example: Vehicle maintenance issue. Replacement bus required."></textarea>
+                            </div>
+
+                            <button type="submit" class="srmss-btn primary w-100">
+                                Apply Adjustment
+                            </button>
+                        </form>
+                    `;
+                }
+
+                schedulePreviewArea.innerHTML = `
+                    <div class="schedule-preview-card">
+                        <div class="schedule-preview-top">
+                            <span class="status-pill ${statusClass}">${escapeHtml(schedule.status)}</span>
+                            <strong>${escapeHtml(schedule.displayDate)}</strong>
+                        </div>
+
+                        <h4>${escapeHtml(schedule.routeName)}</h4>
+
+                        <div class="schedule-preview-time">
+                            <span>${escapeHtml(schedule.departureTime)}</span>
+                            <div></div>
+                            <span>${escapeHtml(schedule.arrivalTime)}</span>
+                        </div>
+
+                        <div class="route-detail-mini-summary mt-4">
+                            <div>
+                                <span>Vehicle</span>
+                                <strong>${escapeHtml(schedule.vehicleName)}</strong>
+                            </div>
+
+                            <div>
+                                <span>Driver</span>
+                                <strong>${escapeHtml(schedule.driverName)}</strong>
+                            </div>
+                        </div>
+
+                        <div class="schedule-note-box">
+                            <span>Notes / Adjustment History</span>
+                            <p>${escapeHtml(schedule.notes).replaceAll("\\n", "<br>")}</p>
+                        </div>
+
+                        ${emergencyAdjustmentHtml}
+                    </div>
+                `;
+
+                document.querySelectorAll(".view-schedule-btn").forEach(btn => {
+                    btn.classList.remove("active");
+                });
+
+                document.querySelectorAll(`.view-schedule-btn[data-schedule-id="${scheduleId}"]`).forEach(btn => {
+                    btn.classList.add("active");
+                });
+
+                document.querySelectorAll(".schedule-row").forEach(row => {
+                    row.classList.remove("active");
+                });
+
+                document.querySelectorAll(`.schedule-row[data-schedule-id="${scheduleId}"]`).forEach(row => {
+                    row.classList.add("active");
+                });
+
+                if (shouldScroll) {
+                    schedulePreviewPanel.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+                }
+            }
+
+            searchInput.addEventListener("input", filterSchedules);
+            dateFilter.addEventListener("change", filterSchedules);
+            statusFilter.addEventListener("change", filterSchedules);
+
+            clearBtn.addEventListener("click", function () {
+                searchInput.value = "";
+                dateFilter.value = "";
+                statusFilter.value = "";
+                filterSchedules();
+            });
+
+            document.querySelectorAll(".view-schedule-btn").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    const scheduleId = parseInt(this.getAttribute("data-schedule-id"));
+                    showSchedulePreview(scheduleId, true);
+                });
+            });
+
+            if (schedules.length > 0) {
+                showSchedulePreview(schedules[0].scheduleId, false);
+            }
+        });
+    </script>
+}
+

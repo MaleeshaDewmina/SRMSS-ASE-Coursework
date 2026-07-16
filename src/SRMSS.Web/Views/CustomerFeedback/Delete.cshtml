@@ -1,0 +1,27 @@
+﻿@model SRMSS.Web.Models.CustomerFeedback
+
+@{
+    ViewData["Title"] = "Delete Feedback";
+    ViewData["PageTitle"] = "Delete Feedback";
+    ViewData["PageSubtitle"] = "Remove an inappropriate or duplicate feedback record.";
+}
+
+<div class="srmss-card danger-panel">
+    <h3 class="card-title">Delete Feedback</h3>
+    <p class="card-subtitle">This action permanently removes the feedback record.</p>
+    <div class="detail-list mb-4">
+        <div><span>Subject</span><strong>@Model.Subject</strong></div>
+        <div><span>Customer</span><strong>@(Model.AppUser?.FullName ?? Model.CustomerKey)</strong></div>
+        <div><span>Status</span><strong>@Model.Status</strong></div>
+    </div>
+    <form asp-action="Delete" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="enterprise-form-actions">
+            <a asp-action="Index" class="srmss-btn secondary">Cancel</a>
+            <button type="submit" class="srmss-btn danger">Delete Feedback</button>
+        </div>
+    </form>
+</div>
+
+

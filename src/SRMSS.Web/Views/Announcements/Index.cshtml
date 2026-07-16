@@ -1,0 +1,109 @@
+﻿@model IEnumerable<SRMSS.Web.Models.Announcement>
+
+@{
+    ViewData["Title"] = "Announcements";
+    ViewData["PageTitle"] = "Announcements";
+    ViewData["PageSubtitle"] = "Operational announcements for depot staff and customers.";
+
+    string role = Context.Session.GetString(SessionKeys.Role) ?? string.Empty;
+    bool canManage = role == "SuperAdmin" || role == "Admin";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success srmss-alert">@TempData["SuccessMessage"]</div>
+}
+
+<div class="module-hero announcement-hero">
+    <div>
+        <span class="module-kicker">Communication Hub</span>
+        <h2>Announcements Center</h2>
+        <p>Publish and view route alerts, depot notices, customer messages and operational updates.</p>
+    </div>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="srmss-btn primary">+ New Announcement</a>
+    }
+</div>
+
+@if (canManage)
+{
+    <div class="metric-grid">
+        <div class="metric-card"><div class="metric-icon">A</div><div><p>Total</p><h3>@ViewBag.TotalAnnouncements</h3></div></div>
+        <div class="metric-card"><div class="metric-icon green">P</div><div><p>Published</p><h3>@ViewBag.PublishedAnnouncements</h3></div></div>
+        <div class="metric-card"><div class="metric-icon red">!</div><div><p>High Priority</p><h3>@ViewBag.HighPriorityAnnouncements</h3></div></div>
+        <div class="metric-card"><div class="metric-icon amber">E</div><div><p>Expired</p><h3>@ViewBag.ExpiredAnnouncements</h3></div></div>
+    </div>
+}
+
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Search Announcements</h3>
+    <form method="get" class="enterprise-filter-grid">
+        <div>
+            <label class="form-label">Audience</label>
+            <select name="audience" class="form-select">
+                <option value="">All Audience</option>
+                <option value="All" selected="@(ViewBag.Audience == "All")">All</option>
+                <option value="User" selected="@(ViewBag.Audience == "User")">Operations Staff</option>
+                <option value="Customer" selected="@(ViewBag.Audience == "Customer")">Customer</option>
+                <option value="Admin" selected="@(ViewBag.Audience == "Admin")">Admin</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label">Priority</label>
+            <select name="priority" class="form-select">
+                <option value="">All Priority</option>
+                <option value="Normal" selected="@(ViewBag.Priority == "Normal")">Normal</option>
+                <option value="High" selected="@(ViewBag.Priority == "High")">High</option>
+                <option value="Critical" selected="@(ViewBag.Priority == "Critical")">Critical</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label">Search</label>
+            <input name="search" value="@ViewBag.Search" class="form-control" placeholder="Title or message..." />
+        </div>
+        <div class="filter-button-area"><button type="submit" class="srmss-btn primary w-100">Apply</button></div>
+        <div class="filter-button-area"><a asp-action="Index" class="srmss-btn secondary w-100">Clear</a></div>
+    </form>
+</div>
+
+<div class="announcement-grid">
+    @if (Model.Any())
+    {
+        foreach (var item in Model)
+        {
+            string priorityClass = item.Priority == "Critical" ? "red" : item.Priority == "High" ? "amber" : "blue";
+            string statusClass = item.Status == "Published" ? "green" : item.Status == "Draft" ? "amber" : "red";
+            <div class="srmss-card announcement-card">
+                <div class="announcement-card-top">
+                    <span class="status-pill @priorityClass">@item.Priority</span>
+                    @if (canManage)
+                    {
+                        <span class="status-pill @statusClass">@item.Status</span>
+                    }
+                </div>
+                <h3>@item.Title</h3>
+                <p>@item.Message</p>
+                <div class="announcement-meta">
+                    <span>Audience: @item.Audience</span>
+                    <span>Publish: @item.PublishDate.ToString("dd MMM yyyy")</span>
+                    <span>Expiry: @(item.ExpiryDate?.ToString("dd MMM yyyy") ?? "No expiry")</span>
+                </div>
+                <div class="feedback-actions">
+                    <a asp-action="Details" asp-route-id="@item.Id" class="action-link">Details</a>
+                    @if (canManage)
+                    {
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="action-link">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="action-link danger">Delete</a>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="srmss-card text-center text-muted py-5">No announcements found.</div>
+    }
+</div>
+
+

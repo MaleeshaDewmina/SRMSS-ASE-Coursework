@@ -1,0 +1,104 @@
+﻿@model IEnumerable<SRMSS.Web.Models.FuelLog>
+
+@{
+    var vehicleOptions = ViewData["VehicleId"] as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+    string fromDateValue = ViewBag.FromDate is DateTime fd ? fd.ToString("yyyy-MM-dd") : string.Empty;
+    string toDateValue = ViewBag.ToDate is DateTime td ? td.ToString("yyyy-MM-dd") : string.Empty;
+    ViewData["Title"] = "Fuel Management";
+    ViewData["PageTitle"] = "Fuel Management";
+    ViewData["PageSubtitle"] = "Track fuel usage, cost, odometer readings and efficiency across the transport fleet.";
+
+    string currentRole = Context.Session.GetString(SessionKeys.Role) ?? string.Empty;
+    bool canDelete = currentRole == "SuperAdmin" || currentRole == "Admin";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success srmss-alert">@TempData["SuccessMessage"]</div>
+}
+
+<div class="module-hero fuel-hero">
+    <div>
+        <span class="module-kicker">Fleet Cost Control</span>
+        <h2>Fuel Operations Center</h2>
+        <p>Monitor litres, cost per journey, efficiency and odometer progression for every vehicle.</p>
+    </div>
+    <a asp-action="Create" class="srmss-btn primary">+ Add Fuel Log</a>
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><div class="metric-icon">F</div><div><p>Total Logs</p><h3>@ViewBag.TotalFuelLogs</h3></div></div>
+    <div class="metric-card"><div class="metric-icon amber">Rs</div><div><p>Monthly Cost</p><h3>@(((decimal)ViewBag.MonthlyFuelCost).ToString("N0"))</h3></div></div>
+    <div class="metric-card"><div class="metric-icon blue">L</div><div><p>Monthly Litres</p><h3>@(((decimal)ViewBag.MonthlyLitres).ToString("N1"))</h3></div></div>
+    <div class="metric-card"><div class="metric-icon green">KM</div><div><p>Avg Efficiency</p><h3>@(((decimal)ViewBag.AverageEfficiency).ToString("N2"))</h3></div></div>
+</div>
+
+<div class="srmss-card mb-4">
+    <h3 class="card-title">Search and Filter Fuel Logs</h3>
+    <form method="get" class="enterprise-filter-grid">
+        <div>
+            <label class="form-label">Vehicle</label>
+            <select name="vehicleId" class="form-select">
+                <option value="">All Vehicles</option>
+                @foreach (var option in vehicleOptions)
+                {
+                    <option value="@option.Value" selected="@option.Selected">@option.Text</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label">From</label>
+            <input name="fromDate" value="@fromDateValue" type="date" class="form-control" />
+        </div>
+        <div>
+            <label class="form-label">To</label>
+            <input name="toDate" value="@toDateValue" type="date" class="form-control" />
+        </div>
+        <div>
+            <label class="form-label">Search</label>
+            <input name="search" value="@ViewBag.Search" class="form-control" placeholder="Station, receipt, vehicle..." />
+        </div>
+        <div class="filter-button-area"><button type="submit" class="srmss-btn primary w-100">Apply</button></div>
+        <div class="filter-button-area"><a asp-action="Index" class="srmss-btn secondary w-100">Clear</a></div>
+    </form>
+</div>
+
+<div class="srmss-card">
+    <h3 class="card-title">Fuel Log List</h3>
+    <div class="table-responsive">
+        <table class="srmss-table enterprise-table">
+            <thead><tr><th>Date</th><th>Vehicle</th><th>Litres</th><th>Cost</th><th>Efficiency</th><th>Odometer</th><th>Station</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var log in Model)
+                    {
+                        <tr>
+                            <td>@log.FuelDate.ToString("dd MMM yyyy")</td>
+                            <td><strong>@(log.Vehicle?.RegistrationNumber ?? "Unknown")</strong><small class="d-block text-muted">@(log.Vehicle?.VehicleType ?? "")</small></td>
+                            <td>@log.Litres.ToString("N2") L</td>
+                            <td>Rs. @log.Cost.ToString("N2")</td>
+                            <td><span class="status-pill green">@log.FuelEfficiencyKmPerLitre.ToString("N2") km/l</span></td>
+                            <td>@log.OdometerReading.ToString("N0") km</td>
+                            <td>@(log.FuelStation ?? "Not recorded")</td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@log.Id" class="action-link">Details</a>
+                                <a asp-action="Edit" asp-route-id="@log.Id" class="action-link">Edit</a>
+                                @if (canDelete)
+                                {
+                                    <a asp-action="Delete" asp-route-id="@log.Id" class="action-link danger">Delete</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">No fuel logs found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+

@@ -1,0 +1,49 @@
+﻿@model SRMSS.Web.Models.FuelLog
+
+@{
+    ViewData["Title"] = "Fuel Log Details";
+    ViewData["PageTitle"] = "Fuel Log Details";
+    ViewData["PageSubtitle"] = "Detailed fuel record and efficiency summary.";
+}
+
+<div class="module-hero fuel-hero mb-4">
+    <div>
+        <span class="module-kicker">Fuel Record</span>
+        <h2>@(Model.Vehicle?.RegistrationNumber ?? "Vehicle")</h2>
+        <p>@Model.FuelDate.ToString("dd MMM yyyy") | @Model.Litres.ToString("N2") litres | Rs. @Model.Cost.ToString("N2")</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a asp-action="Index" class="srmss-btn secondary">Back</a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="srmss-btn primary">Edit</a>
+    </div>
+</div>
+
+<div class="enterprise-detail-grid">
+    <div class="srmss-card">
+        <h3 class="card-title">Fuel Details</h3>
+        <div class="detail-list">
+            <div><span>Vehicle</span><strong>@(Model.Vehicle?.RegistrationNumber ?? "Unknown")</strong></div>
+            <div><span>Date</span><strong>@Model.FuelDate.ToString("dd MMM yyyy")</strong></div>
+            <div><span>Litres</span><strong>@Model.Litres.ToString("N2")</strong></div>
+            <div><span>Cost</span><strong>Rs. @Model.Cost.ToString("N2")</strong></div>
+            <div><span>Fuel Station</span><strong>@(Model.FuelStation ?? "Not recorded")</strong></div>
+            <div><span>Receipt</span><strong>@(Model.ReceiptNumber ?? "Not recorded")</strong></div>
+        </div>
+    </div>
+    <div class="srmss-card green">
+        <h3 class="card-title">Efficiency Summary</h3>
+        <div class="detail-list">
+            <div><span>Distance Covered</span><strong>@Model.DistanceCoveredKm.ToString("N2") km</strong></div>
+            <div><span>Efficiency</span><strong>@Model.FuelEfficiencyKmPerLitre.ToString("N2") km/l</strong></div>
+            <div><span>Odometer</span><strong>@Model.OdometerReading.ToString("N0") km</strong></div>
+            <div><span>Recorded At</span><strong>@Model.CreatedAt.ToString("dd MMM yyyy HH:mm")</strong></div>
+        </div>
+    </div>
+</div>
+
+<div class="srmss-card mt-4">
+    <h3 class="card-title">Notes</h3>
+    <p class="card-subtitle">@(string.IsNullOrWhiteSpace(Model.Notes) ? "No notes recorded." : Model.Notes)</p>
+</div>
+
+
