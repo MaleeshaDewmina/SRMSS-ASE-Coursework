@@ -43,7 +43,7 @@ This project was developed for **Advanced Software Engineering Coursework 01**.
 SRMSS follows a layered MVC architecture.
 
 
-<img width="420" height="524" alt="image" src="https://github.com/user-attachments/assets/0cae95eb-8e95-4738-8d12-9d5db65338ca" />
+<img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/89c94c19-9884-403c-895f-94be3b73bab7" />
 
 
 ---
